@@ -2,7 +2,7 @@ import { useOnboardingStore } from "@/app/store/onboarding.store";
 import NavigationButtons from "../components/common/NavigationButtons";
 import Questionnaire from "../components/questionnaire/Questionnaire";
 import RiskScore from "../components/risk/RiskScore";
-import { useTheme } from "@/context/Themecontext";
+import { useTheme } from "@/context/ThemeContext";
 
 const Step5Compliance = () => {
   const { nextStep } = useOnboardingStore();

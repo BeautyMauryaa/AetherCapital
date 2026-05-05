@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useOnboardingStore } from "@/app/store/onboarding.store";
 import NavigationButtons from "../components/common/NavigationButtons";
 import StepHeader from "../components/StepHeader";
-import { useTheme } from "@/context/Themecontext";
+import { useTheme } from "@/context/ThemeContext";
 import { X, Plus, ShieldCheck } from "lucide-react";
 
 const SUGGESTIONS = ["Viewer", "Editor", "Billing", "Support", "Developer", "Compliance"];

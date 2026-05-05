@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import SignatureCanvas from 'react-signature-canvas';
 import { RotateCcw, CheckCircle2 } from 'lucide-react';
 import { useOnboardingStore } from "@/app/store/onboarding.store";
-import { useTheme } from "@/context/Themecontext";
+import { useTheme } from "@/context/ThemeContext";
 
 const Signature = () => {
   const { formData, updateForm } = useOnboardingStore();

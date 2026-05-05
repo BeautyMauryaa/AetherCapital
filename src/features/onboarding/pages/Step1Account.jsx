@@ -3,7 +3,7 @@ import { useOnboardingStore } from "@/app/store/onboarding.store";
 import AccountTypeCard from "../components/AccountTypeCard";
 import FileUpload from "../components/FileUpload";
 import NavigationButtons from "../components/common/NavigationButtons";
-import { useTheme } from "@/context/Themecontext";
+import { useTheme } from "@/context/ThemeContext";
 
 const Step1Account = () => {
   const { nextStep, updateForm, formData } = useOnboardingStore();

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useOnboardingStore } from "@/app/store/onboarding.store";
 import NavigationButtons from "../../components/common/NavigationButtons";
-import { useTheme } from "@/context/Themecontext";
+import { useTheme } from "@/context/ThemeContext";
 import { MapPin, Clock, ChevronDown, Plus, Minus } from "lucide-react";
 
 const COUNTRIES_WITH_FLAGS = [

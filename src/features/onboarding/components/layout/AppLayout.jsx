@@ -1,5 +1,5 @@
 import StepSidebar from "./StepSidebar";
-import { useTheme } from "@/context/Themecontext";
+import { useTheme } from "@/context/ThemeContext";
 const AppLayout = ({ children }) => {
   return (
     <div className="flex min-h-screen transition-colors duration-300"

@@ -1,6 +1,6 @@
 import React from "react";
 import { User, Building2, Landmark, Check } from "lucide-react";
-import { useTheme } from "@/context/Themecontext";
+import { useTheme } from "@/context/ThemeContext";
 
 const AccountTypeCard = ({ title, description, active, onClick, type }) => {
   const { theme } = useTheme();

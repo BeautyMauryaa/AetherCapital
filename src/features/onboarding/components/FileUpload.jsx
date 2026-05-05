@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import { Image as ImageIcon, CreditCard, CheckCircle2 } from "lucide-react";
-import { useTheme } from "@/context/Themecontext";
+import { useTheme } from "@/context/ThemeContext";
 
 const FileUpload = ({
   variant = "photo",

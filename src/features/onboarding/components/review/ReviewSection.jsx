@@ -1,6 +1,6 @@
 import React from 'react';
 import { Edit3 } from "lucide-react";
-import { useTheme } from "@/context/Themecontext";
+import { useTheme } from "@/context/ThemeContext";
 
 const ReviewSection = ({ step, title, fields, isAddressBlock }) => {
   const { theme } = useTheme();

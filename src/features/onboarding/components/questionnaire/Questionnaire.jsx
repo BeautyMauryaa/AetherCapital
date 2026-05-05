@@ -1,6 +1,6 @@
 import { Info } from "lucide-react";
 import { useOnboardingStore } from "@/app/store/onboarding.store";
-import { useTheme } from "@/context/Themecontext";
+import { useTheme } from "@/context/ThemeContext";
 
 const questions = [
   { id: "regulated",   text: "Do you operate in a regulated industry?" },

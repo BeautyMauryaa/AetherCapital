@@ -3,7 +3,7 @@ import { useOnboardingStore } from "@/app/store/onboarding.store";
 import NavigationButtons from "../components/common/NavigationButtons";
 import StepHeader from "../components/StepHeader";
 import { ChevronDown, Search } from "lucide-react";
-import { useTheme } from "@/context/Themecontext";
+import { useTheme } from "@/context/ThemeContext";
 
 const GENDERS = ["Female", "Male", "Non-binary", "Prefer not to say"];
 const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);

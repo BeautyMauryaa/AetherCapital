@@ -1,6 +1,6 @@
 import React from 'react';
 import { useOnboardingStore } from "@/app/store/onboarding.store";
-import { useTheme } from "@/context/Themecontext";
+import { useTheme } from "@/context/ThemeContext";
 
 const Terms = () => {
   const { formData, updateForm } = useOnboardingStore();

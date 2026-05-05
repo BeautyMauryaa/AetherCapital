@@ -1,6 +1,6 @@
 import AppLayout from "@/features/onboarding/components/layout/AppLayout";
 import { useOnboardingStore } from "@/app/store/onboarding.store";
-import { ThemeProvider } from "@/context/ThemeContext";
+import ThemeProvider from "@/context/ThemeContext";
 import Success from "@/features/onboarding/pages/Success";
 
 // Step 1: Shared
