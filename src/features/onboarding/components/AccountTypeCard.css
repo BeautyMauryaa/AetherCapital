@@ -1,0 +1,49 @@
+@layer components {
+  .account-card {
+    @apply relative p-5 sm:p-6 lg:p-8 rounded-[24px] border-2 transition-all duration-300 cursor-pointer flex flex-col h-full overflow-hidden;
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+  }
+
+  .account-card-active {
+    border-color: #9C75E6;
+    box-shadow: 0 0 30px rgba(156, 117, 230, 0.1);
+  }
+
+  .account-card:not(.account-card-active):hover {
+    border-color: rgba(156, 117, 230, 0.4);
+    background-color: rgba(156, 117, 230, 0.02);
+  }
+
+  .card-icon-box {
+    @apply w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-all border;
+    background-color: var(--bg-main);
+    border-color: var(--border-color);
+    color: var(--text-main);
+  }
+
+  .card-icon-active {
+    @apply border-none text-white;
+    background: linear-gradient(135deg, #9C75E6 0%, #E95CDB 100%);
+  }
+
+  .card-checkbox {
+    @apply w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center transition-all;
+    border-color: var(--border-color);
+  }
+
+  .checkbox-active {
+    @apply text-white;
+    background-color: #9C75E6;
+    border-color: #9C75E6;
+  }
+
+  .card-glow {
+    @apply absolute -bottom-1 left-1/2 -translate-x-1/2 w-3/4 h-4 blur-xl rounded-full opacity-0 transition-opacity duration-500;
+    background-color: rgba(156, 117, 230, 0.2);
+  }
+
+  .account-card-active .card-glow {
+    @apply opacity-100;
+  }
+}

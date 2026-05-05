@@ -1,6 +1,7 @@
 import React from 'react';
 import { useOnboardingStore } from "@/app/store/onboarding.store";
 import NavigationButtons from "../../components/common/NavigationButtons";
+import "./Step2Org.css";
 
 const Step2Org = () => {
   const { formData, updateForm, nextStep, prevStep } = useOnboardingStore();
@@ -10,37 +11,26 @@ const Step2Org = () => {
     updateForm({ [name]: value });
   };
 
-  const inputStyle = {
-    backgroundColor: 'var(--card-bg)',
-    border: '1px solid var(--border-color)',
-    color: 'var(--text-main)',
-  };
-
-  const labelStyle = {
-    color: 'var(--text-main)',
-    opacity: 0.4,
-  };
+  const employeeRanges = ['1-10', '11-50', '51-200', '200+'];
 
   return (
-    <div className="max-w-3xl">
-      {/* Header */}
+    <div className="org-step-container">
       <div className="mb-10">
-        <p className="flex items-center gap-2 font-mono text-[10px] tracking-[0.2em] text-[#a855f7] uppercase mb-3 before:content-[''] before:w-6 before:h-[1px] before:bg-[#a855f7]">
+        <p className="step-subtitle-meta">
           STEP 02 / 06
         </p>
-        <h1 className="text-4xl font-semibold mb-3" style={{ color: 'var(--text-main)' }}>
+        <h1 className="org-title">
           A bit about <span className="text-[#a855f7]">you</span>.
         </h1>
-        <p className="text-[14px]" style={{ color: 'var(--text-main)', opacity: 0.5 }}>
+        <p className="org-description">
           Personal details we'll use for KYC verification and compliance.
         </p>
       </div>
 
       <div className="space-y-8">
-        {/* Company Name Row */}
-        <div className="grid grid-cols-2 gap-6">
+        <div className="org-form-grid">
           <div>
-            <label className="text-[10px] font-bold tracking-[0.2em] uppercase block mb-3" style={labelStyle}>
+            <label className="org-field-label">
               COMPANY NAME <span className="text-[#a855f7]">*</span>
             </label>
             <input
@@ -49,12 +39,11 @@ const Step2Org = () => {
               value={formData.companyName || ""}
               onChange={handleChange}
               placeholder="Legal name"
-              className="w-full rounded-xl px-5 py-4 focus:outline-none focus:ring-1 focus:ring-purple-500/50 transition-all"
-              style={inputStyle}
+              className="org-input"
             />
           </div>
           <div>
-            <label className="text-[10px] font-bold tracking-[0.2em] uppercase block mb-3 opacity-0" style={labelStyle}>
+            <label className="org-field-label opacity-0">
               TRADE NAME
             </label>
             <input
@@ -63,16 +52,13 @@ const Step2Org = () => {
               value={formData.tradeName || ""}
               onChange={handleChange}
               placeholder="Trade name (DBA)"
-              className="w-full rounded-xl px-5 py-4 focus:outline-none focus:ring-1 focus:ring-purple-500/50 transition-all"
-              style={inputStyle}
+              className="org-input"
             />
           </div>
         </div>
-
-        {/* Registration Row */}
-        <div className="grid grid-cols-2 gap-6">
+        <div className="org-form-grid">
           <div>
-            <label className="text-[10px] font-bold tracking-[0.2em] uppercase block mb-3" style={labelStyle}>
+            <label className="org-field-label">
               REGISTRATION <span className="text-[#a855f7]">*</span>
             </label>
             <input
@@ -81,12 +67,11 @@ const Step2Org = () => {
               value={formData.regNumber || ""}
               onChange={handleChange}
               placeholder="Registration number"
-              className="w-full rounded-xl px-5 py-4 focus:outline-none focus:ring-1 focus:ring-purple-500/50 transition-all"
-              style={inputStyle}
+              className="org-input"
             />
           </div>
           <div>
-            <label className="text-[10px] font-bold tracking-[0.2em] uppercase block mb-3 opacity-0" style={labelStyle}>
+            <label className="org-field-label opacity-0">
               DATE
             </label>
             <input
@@ -94,45 +79,38 @@ const Step2Org = () => {
               name="incDate"
               value={formData.incDate || ""}
               onChange={handleChange}
-              className="w-full rounded-xl px-5 py-4 focus:outline-none focus:ring-1 focus:ring-purple-500/50 transition-all"
-              style={{
-                ...inputStyle,
-                colorScheme: 'var(--color-scheme, light)',
-              }}
+              className="org-input org-input-date"
             />
           </div>
         </div>
 
-        {/* Industry */}
         <div>
-          <label className="text-[10px] font-bold tracking-[0.2em] uppercase block mb-3" style={labelStyle}>
+          <label className="org-field-label">
             INDUSTRY <span className="text-[#a855f7]">*</span>
           </label>
           <select
             name="industry"
             value={formData.industry || ""}
             onChange={handleChange}
-            className="w-full rounded-xl px-5 py-4 focus:outline-none focus:ring-1 focus:ring-purple-500/50 transition-all appearance-none"
-            style={inputStyle}
+            className="org-input org-select"
           >
-            <option value="" style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-main)' }}>
+            <option value="" className="org-select-option">
               Select industry
             </option>
-            <option value="fintech" style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-main)' }}>
+            <option value="fintech" className="org-select-option">
               Fintech
             </option>
-            <option value="crypto" style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-main)' }}>
+            <option value="crypto" className="org-select-option">
               Crypto / Web3
             </option>
-            <option value="ecommerce" style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-main)' }}>
+            <option value="ecommerce" className="org-select-option">
               E-commerce
             </option>
           </select>
         </div>
 
-        {/* Employees Slider */}
         <div>
-          <label className="text-[10px] font-bold tracking-[0.2em] uppercase block mb-8" style={labelStyle}>
+          <label className="org-field-label !mb-8">
             NUMBER OF EMPLOYEES
           </label>
           <div className="px-2">
@@ -142,22 +120,25 @@ const Step2Org = () => {
               name="employeeRange"
               value={formData.employeeRange || 2}
               onChange={handleChange}
-              className="w-full h-1 rounded-lg appearance-none cursor-pointer accent-[#a855f7]"
-              style={{ backgroundColor: 'var(--border-color)' }}
+              className="employee-slider-input"
             />
-            <div className="flex justify-between mt-4 text-[10px] font-mono uppercase tracking-widest">
-              {['1-10', '11-50', '51-200', '200+'].map((label, i) => (
-                <span
-                  key={label}
-                  style={{
-                    color: Number(formData.employeeRange) === i + 1 ? '#a855f7' : 'var(--text-main)',
-                    opacity: Number(formData.employeeRange) === i + 1 ? 1 : 0.2,
-                    fontWeight: Number(formData.employeeRange) === i + 1 ? 700 : 400,
-                  }}
-                >
-                  {label}
-                </span>
-              ))}
+            <div className="slider-labels-container">
+              {employeeRanges.map((label, i) => {
+                const isSelected = Number(formData.employeeRange) === i + 1;
+                return (
+                  <span
+                    key={label}
+                    className="slider-tick-label"
+                    style={{
+                      color: isSelected ? '#a855f7' : 'var(--text-main)',
+                      opacity: isSelected ? 1 : 0.2,
+                      fontWeight: isSelected ? 700 : 400,
+                    }}
+                  >
+                    {label}
+                  </span>
+                );
+              })}
             </div>
           </div>
         </div>

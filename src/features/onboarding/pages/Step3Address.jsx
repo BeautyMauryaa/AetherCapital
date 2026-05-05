@@ -3,6 +3,7 @@ import { useOnboardingStore } from "@/app/store/onboarding.store";
 import NavigationButtons from "../components/common/NavigationButtons";
 import StepHeader from "../components/StepHeader";
 import { ChevronDown, MapPin } from "lucide-react";
+import "./Step3Address.css";
 
 const COUNTRIES_WITH_FLAGS = [
   { code: "US", flag: "🇺🇸", name: "United States" },
@@ -60,38 +61,33 @@ const Field = ({ placeholder, value, onChange, hasError }) => (
     placeholder={placeholder}
     value={value}
     onChange={(e) => onChange(e.target.value)}
-    className={`w-full h-[52px] px-4 rounded-xl bg-card border text-[14px] text-foreground
-      placeholder:text-foreground/25 focus:outline-none transition-all duration-200
-      ${hasError
-        ? "border-red-500 focus:border-red-600"
-        : "border-border focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/10"
-      }`}
+    className={`s3-field-input ${hasError ? "s3-field-error" : "s3-field-default"}`}
   />
 );
 
 const SectionLabel = ({ children, required }) => (
-  <p className="text-[10px] font-bold tracking-[0.22em] text-foreground/40 uppercase mb-3">
-    {children}{required && <span className="text-purple-500 ml-1">*</span>}
+  <p className="s3-label-base">
+    {children}{required && <span className="s3-label-required">*</span>}
   </p>
 );
 
 const Step3Address = () => {
   const { nextStep, updateForm, formData } = useOnboardingStore();
 
-  const [country, setCountry]             = useState(formData.country         || "US");
-  const [address1, setAddress1]           = useState(formData.address1        || "");
-  const [address2, setAddress2]           = useState(formData.address2        || "");
-  const [city, setCity]                   = useState(formData.city            || "");
-  const [state, setState]                 = useState(formData.state           || "");
-  const [zip, setZip]                     = useState(formData.zip             || "");
+  const [country, setCountry] = useState(formData.country || "US");
+  const [address1, setAddress1] = useState(formData.address1 || "");
+  const [address2, setAddress2] = useState(formData.address2 || "");
+  const [city, setCity] = useState(formData.city || "");
+  const [state, setState] = useState(formData.state || "");
+  const [zip, setZip] = useState(formData.zip || "");
   const [sameAsPrimary, setSameAsPrimary] = useState(formData.sameAsPrimary ?? true);
-  const [mailAddress1, setMailAddress1]   = useState(formData.mailAddress1    || "");
-  const [mailCity, setMailCity]           = useState(formData.mailCity        || "");
-  const [mailState, setMailState]         = useState(formData.mailState       || "");
-  const [mailPostal, setMailPostal]       = useState(formData.mailPostal      || "");
-  const [timezone, setTimezone]           = useState(formData.timezone        || TIMEZONE_BY_COUNTRY["US"]);
+  const [mailAddress1, setMailAddress1] = useState(formData.mailAddress1 || "");
+  const [mailCity, setMailCity] = useState(formData.mailCity || "");
+  const [mailState, setMailState] = useState(formData.mailState || "");
+  const [mailPostal, setMailPostal] = useState(formData.mailPostal || "");
+  const [timezone, setTimezone] = useState(formData.timezone || TIMEZONE_BY_COUNTRY["US"]);
   const [showCountryDrop, setShowCountryDrop] = useState(false);
-  const [errors, setErrors]               = useState({});
+  const [errors, setErrors] = useState({});
 
   const selectedCountry = COUNTRIES_WITH_FLAGS.find((c) => c.code === country);
 
@@ -101,14 +97,14 @@ const Step3Address = () => {
     setShowCountryDrop(false);
   };
 
-  const hasAddress   = address1.trim();
+  const hasAddress = address1.trim();
   const previewLine2 = [city, state, zip].filter(Boolean).join(", ");
 
   const validate = () => {
     const e = {};
     if (!address1.trim()) e.address1 = true;
-    if (!city.trim())     e.city     = true;
-    if (!zip.trim())      e.zip      = true;
+    if (!city.trim()) e.city = true;
+    if (!zip.trim()) e.zip = true;
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -123,30 +119,24 @@ const Step3Address = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-2 pt-10 pb-28">
-
-      <StepHeader 
-        step={3} 
-        title="Address &" 
-        highlight="location." 
+    <div className="s3-container">
+      <StepHeader
+        step={3}
+        title="Address &"
+        highlight="location."
         subtitle="Where you operate, where to mail you, and the hours we can reach you."
       />
 
-      <p className="text-[10px] font-bold tracking-[0.22em] text-foreground/40 uppercase mb-6">
-        Primary Address
-      </p>
+      <p className="s3-section-heading">Primary Address</p>
 
-      {/* ── COUNTRY ── */}
+      {/* COUNTRY */}
       <div className="mb-5">
         <SectionLabel required>Country</SectionLabel>
         <div className="relative">
           <button
             onClick={() => setShowCountryDrop(!showCountryDrop)}
             onBlur={() => setTimeout(() => setShowCountryDrop(false), 150)}
-            className="w-full h-[52px] px-4 rounded-xl bg-card border border-border
-              flex items-center gap-3 text-[14px] text-foreground
-              hover:border-foreground/10 focus:outline-none focus:border-purple-500/50
-              transition-all duration-200"
+            className="s3-dropdown-button"
           >
             <span className="text-lg leading-none">{selectedCountry?.flag}</span>
             <span className="flex-1 text-left">{selectedCountry?.name}</span>
@@ -154,17 +144,12 @@ const Step3Address = () => {
           </button>
 
           {showCountryDrop && (
-            <div className="absolute z-50 top-full mt-1 w-full max-h-52 overflow-y-auto
-              bg-card border border-border rounded-xl shadow-2xl">
+            <div className="s3-dropdown-menu">
               {COUNTRIES_WITH_FLAGS.map((c) => (
                 <button
                   key={c.code}
                   onMouseDown={() => handleCountryChange(c.code)}
-                  className={`w-full text-left px-4 py-2.5 flex items-center gap-3 text-[13px] transition-colors
-                    ${country === c.code
-                      ? "bg-purple-500/15 text-foreground"
-                      : "text-foreground/60 hover:bg-foreground/5 hover:text-foreground"
-                    }`}
+                  className={`s3-dropdown-item ${country === c.code ? "s3-dropdown-item-active" : "s3-dropdown-item-inactive"}`}
                 >
                   <span className="text-base">{c.flag}</span>
                   {c.name}
@@ -175,7 +160,7 @@ const Step3Address = () => {
         </div>
       </div>
 
-      {/* ── ADDRESS LINE 1 ── */}
+      {/* ADDRESS LINE 1 */}
       <div className="mb-5">
         <SectionLabel required>Address Line 1</SectionLabel>
         <Field
@@ -184,17 +169,17 @@ const Step3Address = () => {
           onChange={(v) => { setAddress1(v); setErrors((e) => ({ ...e, address1: false })); }}
           hasError={errors.address1}
         />
-        {errors.address1 && <p className="text-[11px] text-red-400 mt-1.5">Address is required</p>}
+        {errors.address1 && <p className="s3-error-text">Address is required</p>}
       </div>
 
-      {/* ── ADDRESS LINE 2 ── */}
+      {/* ADDRESS LINE 2 */}
       <div className="mb-5">
         <SectionLabel>Address Line 2</SectionLabel>
         <Field placeholder="Apt 4B" value={address2} onChange={setAddress2} />
-        <p className="text-[12px] text-foreground/30 mt-2">Apartment, suite, floor — optional</p>
+        <p className="s3-helper-text">Apartment, suite, floor — optional</p>
       </div>
 
-      {/* ── CITY / STATE / ZIP ── */}
+      {/* CITY / STATE / ZIP */}
       <div className="grid grid-cols-3 gap-3 mb-6">
         <div>
           <SectionLabel required>City</SectionLabel>
@@ -204,7 +189,7 @@ const Step3Address = () => {
             onChange={(v) => { setCity(v); setErrors((e) => ({ ...e, city: false })); }}
             hasError={errors.city}
           />
-          {errors.city && <p className="text-[11px] text-red-400 mt-1.5">Required</p>}
+          {errors.city && <p className="s3-error-text">Required</p>}
         </div>
         <div>
           <SectionLabel>State</SectionLabel>
@@ -218,15 +203,15 @@ const Step3Address = () => {
             onChange={(v) => { setZip(v); setErrors((e) => ({ ...e, zip: false })); }}
             hasError={errors.zip}
           />
-          {errors.zip && <p className="text-[11px] text-red-400 mt-1.5">Required</p>}
+          {errors.zip && <p className="s3-error-text">Required</p>}
         </div>
       </div>
 
-      {/* ── MAP PREVIEW ── */}
-      <div className="flex rounded-2xl overflow-hidden border border-border mb-6 min-h-[160px]">
-        <div className="flex-1 bg-background/50 flex items-center justify-center relative">
+      {/* MAP PREVIEW */}
+      <div className="s3-map-wrapper">
+        <div className="s3-map-visual">
           <div
-            className="absolute inset-0 opacity-[0.03] dark:opacity-10"
+            className="s3-map-grid-overlay"
             style={{
               backgroundImage: "linear-gradient(rgba(139,92,246,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,0.3) 1px, transparent 1px)",
               backgroundSize: "32px 32px",
@@ -244,7 +229,7 @@ const Step3Address = () => {
           </div>
         </div>
 
-        <div className="w-[45%] bg-card px-6 py-5 flex flex-col justify-center border-l border-border">
+        <div className="s3-map-info-panel">
           <p className="text-[9px] font-bold tracking-[0.22em] text-purple-500/80 uppercase mb-3">
             Address Verification
           </p>
@@ -262,23 +247,13 @@ const Step3Address = () => {
         </div>
       </div>
 
-      {/* ── MAILING SAME AS PRIMARY CHECKBOX ── */}
+      {/* MAILING CHECKBOX */}
       <div className="mb-6">
-        <label 
-            className="flex items-center gap-3 cursor-pointer group"
-            onClick={() => setSameAsPrimary(!sameAsPrimary)}
-        >
-          <div
-            className={`w-5 h-5 rounded-[5px] border-2 flex items-center justify-center flex-shrink-0 transition-all duration-200
-              ${sameAsPrimary
-                ? "bg-purple-600 border-purple-600 shadow-[0_0_8px_rgba(139,92,246,0.4)]"
-                : "bg-transparent border-border group-hover:border-foreground/30"
-              }`}
-          >
+        <label className="s3-checkbox-container" onClick={() => setSameAsPrimary(!sameAsPrimary)}>
+          <div className={`s3-checkbox-box ${sameAsPrimary ? "s3-checkbox-checked" : "s3-checkbox-unchecked"}`}>
             {sameAsPrimary && (
               <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.8"
-                  strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             )}
           </div>
@@ -288,22 +263,14 @@ const Step3Address = () => {
         </label>
       </div>
 
-      {/* ── MAILING ADDRESS SECTION ── */}
+      {/* MAILING ADDRESS SECTION */}
       {!sameAsPrimary && (
         <div className="mb-8 p-6 rounded-2xl border border-border bg-card/50">
-          <p className="text-[10px] font-bold tracking-[0.22em] text-foreground/40 uppercase mb-6">
-            Mailing Address
-          </p>
-
+          <p className="s3-section-heading">Mailing Address</p>
           <div className="mb-5">
             <SectionLabel>Address Line 1</SectionLabel>
-            <Field
-              placeholder="Street number and street name"
-              value={mailAddress1}
-              onChange={setMailAddress1}
-            />
+            <Field placeholder="Street number and street name" value={mailAddress1} onChange={setMailAddress1} />
           </div>
-
           <div className="grid grid-cols-3 gap-3">
             <div>
               <SectionLabel>City</SectionLabel>
@@ -321,16 +288,14 @@ const Step3Address = () => {
         </div>
       )}
 
-      {/* ── TIME ZONE ── */}
+      {/* TIME ZONE */}
       <div className="mb-8">
         <SectionLabel>Time Zone</SectionLabel>
         <div className="relative">
           <select
             value={timezone}
             onChange={(e) => setTimezone(e.target.value)}
-            className="w-full h-[52px] px-4 pr-10 rounded-xl bg-card border border-border
-              text-[14px] text-foreground appearance-none cursor-pointer
-              focus:outline-none focus:border-purple-500/50 transition-all duration-200"
+            className="s3-field-input appearance-none cursor-pointer pr-10"
           >
             {TIMEZONES.map((tz) => (
               <option key={tz} value={tz} className="bg-card text-foreground">
@@ -338,12 +303,9 @@ const Step3Address = () => {
               </option>
             ))}
           </select>
-          <ChevronDown
-            size={16}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/30 pointer-events-none"
-          />
+          <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/30 pointer-events-none" />
         </div>
-        <p className="text-[12px] text-foreground/30 mt-2">Auto-detected from country — editable</p>
+        <p className="s3-helper-text">Auto-detected from country — editable</p>
       </div>
 
       <NavigationButtons onNext={handleContinue} />

@@ -1,27 +1,32 @@
+import React from "react";
+import "./StepHeader.css";
+
 const StepHeader = ({ step, total = 6, title, highlight, subtitle }) => {
+  const currentStep = String(step).padStart(2, "0");
+  const totalSteps = String(total).padStart(2, "0");
+
   return (
-    <div className="mb-10">
-      {/* Step indicator */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-8 h-[1.5px] bg-purple-500 rounded-full" />
-        <span className="font-mono text-[11px] tracking-[0.2em] text-purple-500 uppercase font-bold">
-          Step {String(step).padStart(2, "0")} / {String(total).padStart(2, "0")}
+    <div className="step-header-container">
+      <div className="step-indicator">
+        <div className="step-line" />
+        <span className="step-counter">
+          Step {currentStep} / {totalSteps}
         </span>
       </div>
 
-      {/* Heading */}
-      <h1 className="text-[42px] font-bold leading-tight tracking-tight mb-3 text-foreground">
+      <h1 className="header-title">
         {title}{" "}
         {highlight && (
-          <span className="bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent">
+          <span className="header-highlight">
             {highlight}
           </span>
         )}
       </h1>
 
-      {/* Subtitle - Replaced text-muted with text-foreground/60 for better contrast control */}
       {subtitle && (
-        <p className="text-[15px] text-foreground/60 leading-relaxed max-w-2xl">{subtitle}</p>
+        <p className="header-subtitle">
+          {subtitle}
+        </p>
       )}
     </div>
   );

@@ -6,6 +6,7 @@ import ReviewSection from "../components/review/ReviewSection";
 import Terms from "../components/review/Terms";
 import Signature from "../components/review/Signature";
 import { Building2, User, ShieldCheck } from "lucide-react";
+import "./Step6Review.css";
 
 const Step6Review = () => {
   const prevStep = useOnboardingStore((s) => s.prevStep);
@@ -19,7 +20,8 @@ const Step6Review = () => {
   const isTermsAccepted = !!agreedToTerms;
   const canSubmit = isSignatureCaptured && isTermsAccepted;
 
-  const isBusiness = formData.accountType?.toLowerCase() === 'business' || formData.accountType?.toLowerCase() === 'corporate';
+  const isBusiness = formData.accountType?.toLowerCase() === 'business' || 
+                     formData.accountType?.toLowerCase() === 'corporate';
 
   const handleSubmit = () => {
     if (!canSubmit || isSubmitting) return;
@@ -27,7 +29,7 @@ const Step6Review = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 pt-10 pb-28 font-sans">
+    <div className="s6-container">
       <StepHeader
         step={6}
         title="Review &"
@@ -35,38 +37,32 @@ const Step6Review = () => {
         subtitle="Final review. Confirm details, sign, and submit your application."
       />
 
-      <div
-        className="mt-12 overflow-hidden rounded-[32px] shadow-sm transition-all duration-300"
-        style={{ border: '1px solid var(--border-color)' }}
-      >
+      <div className="s6-review-card">
         {/* ── TOP HEADER ── */}
-        <div
-          className="p-8 md:p-12 flex items-center gap-6 transition-colors duration-300"
-          style={{ backgroundColor: 'var(--card-bg)' }}
-        >
-          <div
-            className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0"
-            style={{ backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)' }}
-          >
-            {isBusiness ? <Building2 className="text-purple-600" size={24} /> : <User className="text-purple-600" size={24} />}
+        <div className="s6-card-header">
+          <div className="s6-icon-wrapper">
+            {isBusiness ? 
+              <Building2 className="text-purple-600" size={24} /> : 
+              <User className="text-purple-600" size={24} />
+            }
           </div>
           <div className="flex-1">
-            <h2 className="text-xl md:text-2xl font-semibold leading-tight" style={{ color: 'var(--text-main)' }}>
+            <h2 className="s6-profile-name">
               {isBusiness
                 ? (formData.legalName || 'Legal Entity Name')
                 : (formData.firstName ? `${formData.firstName} ${formData.lastName || ''}` : 'Applicant Profile')
               }
             </h2>
-            <div className="flex items-center gap-3 mt-1 text-[10px] font-bold tracking-widest uppercase" style={{ color: 'var(--text-main)', opacity: 0.4 }}>
+            <div className="s6-meta-row">
               <span>{formData.accountType || "Individual"}</span>
-              <span className="w-1 h-1 rounded-full" style={{ backgroundColor: 'var(--text-main)', opacity: 0.3 }} />
+              <span className="s6-dot" />
               <span>App-Pending</span>
             </div>
           </div>
         </div>
 
         {/* ── SECTIONS ── */}
-        <div className="p-2 md:p-4 space-y-2 transition-colors duration-300" style={{ backgroundColor: 'var(--bg-main)' }}>
+        <div className="s6-sections-body">
           <ReviewSection
             step="01"
             title="ACCOUNT & IDENTITY"
@@ -106,7 +102,7 @@ const Step6Review = () => {
       </div>
 
       {/* ── NAVIGATION ── */}
-      <div className="mt-12 pt-8 flex flex-col items-center" style={{ borderTop: '1px solid var(--border-color)' }}>
+      <div className="s6-footer-nav">
         <NavigationButtons
           onNext={handleSubmit}
           onBack={prevStep}
@@ -116,7 +112,7 @@ const Step6Review = () => {
         />
 
         {!canSubmit && !isSubmitting && (
-          <div className="flex items-center gap-2 mt-6 text-[10px] text-gray-400 uppercase tracking-widest font-bold">
+          <div className="s6-validation-warning">
             <ShieldCheck size={14} className="text-orange-400" />
             <span>Verification Required: Signature & Terms</span>
           </div>

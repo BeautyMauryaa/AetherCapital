@@ -1,0 +1,31 @@
+
+.step-header-container {
+  @apply mb-10;
+}
+
+/* Step Indicator Section */
+.step-indicator {
+  @apply flex items-center gap-3 mb-6;
+}
+
+.step-line {
+  @apply w-8 h-[1.5px] bg-purple-500 rounded-full;
+}
+
+.step-counter {
+  @apply font-mono text-[11px] tracking-[0.2em] text-purple-500 uppercase font-bold;
+}
+
+/* Heading Section */
+.header-title {
+  @apply text-[42px] font-bold leading-tight tracking-tight mb-3 text-foreground;
+}
+
+.header-highlight {
+  @apply bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent;
+}
+
+/* Subtitle Section */
+.header-subtitle {
+  @apply text-[15px] text-foreground/60 leading-relaxed max-w-2xl;
+}

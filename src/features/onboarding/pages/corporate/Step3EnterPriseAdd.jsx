@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { MapPin, ChevronDown, Clock, Plus, Building2, Globe } from 'lucide-react';
 import { useOnboardingStore } from "@/app/store/onboarding.store";
 import NavigationButtons from "../../components/common/NavigationButtons";
+import "./Step3EnterPriseAdd.css";
 
 const Step3EnterPriseAdd = () => {
   const { formData, updateForm, nextStep, prevStep } = useOnboardingStore();
@@ -29,89 +30,54 @@ const Step3EnterPriseAdd = () => {
 
   const hasAddress = formData.address1?.trim();
 
-  const inputStyle = {
-    backgroundColor: 'var(--card-bg)',
-    border: '1px solid var(--border-color)',
-    color: 'var(--text-main)',
-  };
-
-  const labelStyle = {
-    color: 'var(--text-main)',
-    opacity: 0.5,
-  };
-
   return (
-    <div className="max-w-4xl pb-24 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="enterprise-container animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Header */}
       <div className="mb-10 text-left">
-        <p className="flex items-center gap-2 font-mono text-[10px] tracking-[0.3em] text-[#a855f7] uppercase mb-4 before:content-[''] before:w-8 before:h-[1px] before:bg-[#a855f7]">
-          STEP 03 / 06
-        </p>
-        <h1 className="text-[48px] font-bold leading-tight tracking-tight mb-4"
-          style={{ color: 'var(--text-main)' }}>
+        <p className="step-label">STEP 03 / 06</p>
+        <h1 className="main-title">
           Address & <span className="text-[#a855f7]">location.</span>
         </h1>
-        <p className="text-[15px] max-w-lg" style={{ color: 'var(--text-main)', opacity: 0.4 }}>
+        <p className="sub-description">
           Where you operate, where to mail you, and the hours we can reach you.
         </p>
       </div>
 
       <div className="space-y-12">
-        {/* ── PRIMARY ADDRESS ── */}
+        {/* PRIMARY ADDRESS */}
         <section className="space-y-8">
-          <div className="flex items-center gap-4 mb-2">
-            <h3 className="text-[11px] font-bold tracking-[0.25em] uppercase whitespace-nowrap flex items-center gap-2"
-              style={{ color: 'var(--text-main)', opacity: 0.4 }}>
+          <div className="section-header">
+            <h3 className="section-title">
               <Building2 size={14} className="text-[#a855f7]" />
               Primary Address
             </h3>
-            <div className="w-full h-[1px]" style={{ backgroundColor: 'var(--border-color)' }} />
+            <div className="section-divider" />
           </div>
 
           <div className="grid grid-cols-1 gap-6">
-            {/* Country */}
-            <div className="space-y-3">
-              <label className="text-[11px] font-medium uppercase tracking-widest ml-1" style={labelStyle}>
-                Country *
-              </label>
+            <div className="input-group">
+              <label className="input-label">Country *</label>
               <div className="relative">
                 <button
                   type="button"
                   onClick={() => setShowCountryDrop(!showCountryDrop)}
-                  className="w-full h-[56px] px-5 rounded-2xl flex items-center justify-between text-sm hover:opacity-80 transition-all"
-                  style={inputStyle}
+                  className="enterprise-input flex items-center justify-between"
                 >
                   <span className="flex items-center gap-3">
-                    <div
-                      className="w-6 h-4 rounded-sm overflow-hidden flex items-center justify-center"
-                      style={{ backgroundColor: 'var(--border-color)' }}
-                    >
-                      <Globe size={12} style={{ color: 'var(--text-main)', opacity: 0.4 }} />
+                    <div className="w-6 h-4 rounded-sm overflow-hidden flex items-center justify-center bg-[var(--border-color)]">
+                      <Globe size={12} className="opacity-40" />
                     </div>
-                    <span style={{ color: 'var(--text-main)' }}>{formData.country || "United States"}</span>
+                    <span>{formData.country || "United States"}</span>
                   </span>
-                  <ChevronDown
-                    size={18}
-                    className={`transition-transform ${showCountryDrop ? 'rotate-180' : ''}`}
-                    style={{ color: 'var(--text-main)', opacity: 0.3 }}
-                  />
+                  <ChevronDown size={18} className={`transition-transform opacity-30 ${showCountryDrop ? 'rotate-180' : ''}`} />
                 </button>
                 {showCountryDrop && (
-                  <div
-                    className="absolute z-50 top-full mt-1 w-full rounded-xl overflow-hidden shadow-2xl max-h-64 overflow-y-auto"
-                    style={{
-                      backgroundColor: 'var(--card-bg)',
-                      border: '1px solid var(--border-color)',
-                    }}
-                  >
+                  <div className="absolute z-50 top-full mt-1 w-full rounded-xl overflow-hidden shadow-2xl max-h-64 overflow-y-auto bg-[var(--card-bg)] border border-[var(--border-color)]">
                     {["United States", "United Kingdom", "Canada", "Australia", "India", "Germany", "Singapore"].map((country) => (
                       <div
                         key={country}
                         onClick={() => { handleFieldChange("country", country); setShowCountryDrop(false); }}
-                        className="px-5 py-3 cursor-pointer transition-colors"
-                        style={{ color: 'var(--text-main)', opacity: 0.7 }}
-                        onMouseEnter={e => e.currentTarget.style.opacity = 1}
-                        onMouseLeave={e => e.currentTarget.style.opacity = 0.7}
+                        className="px-5 py-3 cursor-pointer opacity-70 hover:opacity-100 transition-opacity"
                       >
                         {country}
                       </div>
@@ -121,51 +87,29 @@ const Step3EnterPriseAdd = () => {
               </div>
             </div>
 
-            {/* Address Line 1 */}
-            <div className="space-y-3">
-              <label className="text-[11px] font-medium uppercase tracking-widest ml-1" style={labelStyle}>
-                Address Line 1 *
-              </label>
+            <div className="input-group">
+              <label className="input-label">Address Line 1 *</label>
               <input
                 placeholder="Street number and street name"
                 value={formData.address1 || ""}
                 onChange={(e) => handleFieldChange("address1", e.target.value)}
-                className="w-full h-[56px] px-5 rounded-2xl focus:outline-none focus:ring-1 focus:ring-purple-500/50 transition-all"
-                style={inputStyle}
+                className="enterprise-input"
               />
             </div>
 
-            {/* Address Line 2 */}
-            <div className="space-y-3">
-              <label className="text-[11px] font-medium uppercase tracking-widest ml-1" style={labelStyle}>
-                Address Line 2
-              </label>
-              <input
-                placeholder="Apt 4B / Suite / Floor"
-                value={formData.address2 || ""}
-                onChange={(e) => handleFieldChange("address2", e.target.value)}
-                className="w-full h-[56px] px-5 rounded-2xl focus:outline-none focus:ring-1 focus:ring-purple-500/50 transition-all"
-                style={inputStyle}
-              />
-            </div>
-
-            {/* City / State / Zip */}
             <div className="grid grid-cols-3 gap-6">
               {[
                 { label: "City *", field: "city", placeholder: "City" },
                 { label: "State *", field: "state", placeholder: "State" },
                 { label: "Zip *", field: "zip", placeholder: "10001" },
               ].map(({ label, field, placeholder }) => (
-                <div key={field} className="space-y-3">
-                  <label className="text-[11px] font-medium uppercase tracking-widest" style={labelStyle}>
-                    {label}
-                  </label>
+                <div key={field} className="input-group">
+                  <label className="input-label">{label}</label>
                   <input
                     placeholder={placeholder}
                     value={formData[field] || ""}
                     onChange={(e) => handleFieldChange(field, e.target.value)}
-                    className="w-full h-[56px] px-5 rounded-2xl focus:outline-none focus:ring-1 focus:ring-purple-500/50 transition-all"
-                    style={inputStyle}
+                    className="enterprise-input"
                   />
                 </div>
               ))}
@@ -173,194 +117,100 @@ const Step3EnterPriseAdd = () => {
           </div>
         </section>
 
-        {/* ── ADDRESS PREVIEW ── */}
-        <div
-          className="grid grid-cols-[1fr_2fr] rounded-3xl overflow-hidden min-h-[140px] group"
-          style={{
-            backgroundColor: 'var(--card-bg)',
-            border: '1px solid var(--border-color)',
-          }}
-        >
-          <div
-            className="flex items-center justify-center relative overflow-hidden"
-            style={{ borderRight: '1px solid var(--border-color)' }}
-          >
-            <div className="absolute inset-0 bg-[radial-gradient(#a855f7_1px,transparent_1px)] [background-size:24px_24px] opacity-10 group-hover:opacity-20 transition-opacity" />
-            <div
-              className={`p-4 rounded-full transition-all duration-500 ${hasAddress ? 'shadow-[0_0_20px_rgba(168,85,247,0.3)]' : ''}`}
-              style={{ backgroundColor: hasAddress ? 'rgba(168,85,247,0.2)' : 'var(--border-color)' }}
-            >
-              <MapPin
-                size={24}
-                className={hasAddress ? "text-[#a855f7]" : ""}
-                style={!hasAddress ? { color: 'var(--text-main)', opacity: 0.1 } : {}}
-              />
+        {/* ADDRESS PREVIEW */}
+        <div className="preview-card group">
+          <div className="preview-icon-box">
+            <div className="preview-dot-pattern" />
+            <div className={`p-4 rounded-full transition-all duration-500 ${hasAddress ? 'bg-[#a855f733] shadow-[0_0_20px_rgba(168,85,247,0.3)]' : 'bg-[var(--border-color)]'}`}>
+              <MapPin size={24} className={hasAddress ? "text-[#a855f7]" : "opacity-10"} />
             </div>
           </div>
           <div className="p-8 flex flex-col justify-center">
-            <h4 className="text-[10px] font-bold text-[#a855f7] uppercase tracking-[0.2em] mb-2">
-              Address Verification
-            </h4>
-            <p className="text-[13px] leading-relaxed font-medium" style={{ color: 'var(--text-main)', opacity: 0.4 }}>
-              {hasAddress
-                ? `${formData.address1}, ${formData.city || ""}, ${formData.state || ""}`
-                : "Enter an address to preview the location."}
+            <h4 className="text-[10px] font-bold text-[#a855f7] uppercase tracking-[0.2em] mb-2">Address Verification</h4>
+            <p className="text-[13px] leading-relaxed font-medium opacity-40">
+              {hasAddress ? `${formData.address1}, ${formData.city || ""}, ${formData.state || ""}` : "Enter an address to preview the location."}
             </p>
           </div>
         </div>
 
-        {/* ── MAILING + TIMEZONE ── */}
+        {/* MAILING + TIMEZONE */}
         <div className="space-y-6 pt-4">
           <label className="flex items-center gap-3 cursor-pointer group w-fit">
             <div
-              className="w-5 h-5 rounded flex items-center justify-center transition-all"
-              style={formData.mailingSame ? {
-                backgroundColor: '#a855f7',
-                border: '1px solid #a855f7',
-              } : {
-                border: '1px solid var(--border-color)',
-                backgroundColor: 'var(--card-bg)',
-              }}
+              className={`w-5 h-5 rounded flex items-center justify-center transition-all border ${formData.mailingSame ? 'bg-[#a855f7] border-[#a855f7]' : 'bg-[var(--card-bg)] border-[var(--border-color)]'}`}
               onClick={() => handleFieldChange("mailingSame", !formData.mailingSame)}
             >
               {formData.mailingSame && <div className="w-2 h-2 bg-white rounded-full" />}
             </div>
-            <span
-              className="text-sm transition-colors"
-              style={{ color: 'var(--text-main)', opacity: 0.6 }}
-            >
-              Mailing address is the same as primary
-            </span>
+            <span className="text-sm opacity-60">Mailing address is the same as primary</span>
           </label>
 
-          <div className="space-y-3 pt-4">
-            <label className="text-[11px] font-medium uppercase tracking-widest ml-1" style={labelStyle}>
-              Time Zone
-            </label>
+          <div className="input-group pt-4">
+            <label className="input-label">Time Zone</label>
             <div className="relative">
               <select
-                className="w-full h-[56px] px-5 rounded-2xl text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-purple-500/50 transition-all"
-                style={{ ...inputStyle, colorScheme: 'var(--color-scheme, light)' }}
+                className="enterprise-input appearance-none"
+                style={{ colorScheme: 'var(--color-scheme, light)' }}
                 value={formData.timezone || "America/New_York"}
                 onChange={(e) => handleFieldChange("timezone", e.target.value)}
               >
-                <option value="America/New_York" style={{ backgroundColor: 'var(--card-bg)' }}>America/New_York</option>
-                <option value="Europe/London" style={{ backgroundColor: 'var(--card-bg)' }}>Europe/London</option>
-                <option value="Asia/Tokyo" style={{ backgroundColor: 'var(--card-bg)' }}>Asia/Tokyo</option>
-                <option value="Asia/Kolkata" style={{ backgroundColor: 'var(--card-bg)' }}>Asia/Kolkata</option>
-                <option value="Asia/Dubai" style={{ backgroundColor: 'var(--card-bg)' }}>Asia/Dubai</option>
-                <option value="Asia/Singapore" style={{ backgroundColor: 'var(--card-bg)' }}>Asia/Singapore</option>
+                <option value="America/New_York">America/New_York</option>
+                <option value="Europe/London">Europe/London</option>
+                <option value="Asia/Tokyo">Asia/Tokyo</option>
+                <option value="Asia/Kolkata">Asia/Kolkata</option>
               </select>
-              <Clock
-                size={16}
-                className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none"
-                style={{ color: 'var(--text-main)', opacity: 0.2 }}
-              />
+              <Clock size={16} className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none opacity-20" />
             </div>
-            <p className="text-[11px] italic ml-1" style={{ color: 'var(--text-main)', opacity: 0.2 }}>
-              Auto-detected from country — editable
-            </p>
+            <p className="text-[11px] italic ml-1 opacity-20">Auto-detected from country — editable</p>
           </div>
         </div>
 
-        {/* ── OPERATING HOURS ── */}
+        {/* OPERATING HOURS */}
         <section className="pt-6">
-          <div className="flex items-center gap-4 mb-8">
-            <h3 className="text-[11px] font-bold tracking-[0.25em] uppercase whitespace-nowrap"
-              style={{ color: 'var(--text-main)', opacity: 0.4 }}>
-              Operating Hours
-            </h3>
-            <div className="w-full h-[1px]" style={{ backgroundColor: 'var(--border-color)' }} />
+          <div className="section-header">
+            <h3 className="section-title">Operating Hours</h3>
+            <div className="section-divider" />
           </div>
 
           <div className="space-y-4">
-            {/* Day Toggle Bar */}
-            <div
-              className="flex gap-2 p-1.5 rounded-2xl"
-              style={{
-                backgroundColor: 'var(--card-bg)',
-                border: '1px solid var(--border-color)',
-              }}
-            >
+            <div className="day-toggle-bar">
               {DAYS.map((day) => (
                 <button
                   key={day.id}
                   onClick={() => toggleDay(day.id)}
-                  className="flex-1 py-3 rounded-xl text-[11px] font-bold transition-all duration-300"
-                  style={hours[day.id].active ? {
-                    backgroundColor: '#a855f7',
-                    color: '#ffffff',
-                    boxShadow: '0 0 20px rgba(168,85,247,0.2)',
-                  } : {
-                    color: 'var(--text-main)',
-                    opacity: 0.3,
-                  }}
+                  className={`day-btn ${hours[day.id].active ? 'day-btn-active' : ''}`}
                 >
                   {day.label}
                 </button>
               ))}
             </div>
 
-            {/* Active Day Slots */}
             <div className="space-y-3">
               {DAYS.filter(d => hours[d.id].active).map((day) => (
-                <div
-                  key={day.id}
-                  className="flex items-center gap-4 p-4 rounded-2xl animate-in slide-in-from-left duration-300"
-                  style={{
-                    backgroundColor: 'var(--card-bg)',
-                    border: '1px solid var(--border-color)',
-                  }}
-                >
-                  <span
-                    className="w-12 text-[12px] font-mono font-bold"
-                    style={{ color: 'var(--text-main)', opacity: 0.4 }}
-                  >
-                    {day.label}
-                  </span>
+                <div key={day.id} className="time-slot-row animate-in slide-in-from-left duration-300">
+                  <span className="w-12 text-[12px] font-mono font-bold opacity-40">{day.label}</span>
                   <div className="flex-1 grid grid-cols-2 gap-4">
                     {['open', 'close'].map((timeKey) => (
                       <div key={timeKey} className="relative">
                         <input
                           value={hours[day.id][timeKey]}
-                          className="w-full h-[44px] px-4 rounded-xl text-xs font-mono text-center focus:outline-none focus:ring-1 focus:ring-purple-500/30 transition-all"
-                          style={{
-                            backgroundColor: 'var(--bg-main)',
-                            border: '1px solid var(--border-color)',
-                            color: 'var(--text-main)',
-                            opacity: 0.7,
-                          }}
+                          className="time-input"
                           onChange={(e) => {
                             const newHours = { ...hours, [day.id]: { ...hours[day.id], [timeKey]: e.target.value } };
                             updateForm({ operatingHours: newHours });
                           }}
                         />
-                        <Clock
-                          size={12}
-                          className="absolute right-3 top-1/2 -translate-y-1/2"
-                          style={{ color: 'var(--text-main)', opacity: 0.15 }}
-                        />
+                        <Clock size={12} className="absolute right-3 top-1/2 -translate-y-1/2 opacity-15" />
                       </div>
                     ))}
                   </div>
-                  <button
-                    className="w-10 h-10 flex items-center justify-center rounded-xl transition-all hover:text-[#a855f7]"
-                    style={{
-                      backgroundColor: 'var(--border-color)',
-                      color: 'var(--text-main)',
-                      opacity: 0.5,
-                    }}
-                  >
+                  <button className="w-10 h-10 flex items-center justify-center rounded-xl bg-[var(--border-color)] opacity-50 hover:text-[#a855f7] transition-all">
                     <Plus size={18} />
                   </button>
                 </div>
               ))}
             </div>
-
-            <p
-              className="text-[11px] text-center mt-4 uppercase tracking-widest"
-              style={{ color: 'var(--text-main)', opacity: 0.2 }}
-            >
+            <p className="text-[11px] text-center mt-4 uppercase tracking-widest opacity-20">
               Toggle days of operation, then set hours per day
             </p>
           </div>

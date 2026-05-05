@@ -1,9 +1,11 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useOnboardingStore } from "@/app/store/onboarding.store";
 import AccountTypeCard from "../components/AccountTypeCard";
 import FileUpload from "../components/FileUpload";
 import NavigationButtons from "../components/common/NavigationButtons";
 import { useTheme } from "@/context/ThemeContext";
+
+import "./Step1Account.css";
 
 const Step1Account = () => {
   const { nextStep, updateForm, formData } = useOnboardingStore();
@@ -16,20 +18,22 @@ const Step1Account = () => {
     nextStep();
   };
 
-  return (
-    <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-2 pt-6 sm:pt-10 pb-24 sm:pb-28">
+  // Dynamic class helpers
+  const textClass = isDark ? "text-white" : "text-slate-900";
+  const subTextClass = isDark ? "text-white/60" : "text-slate-500";
+  const labelClass = isDark ? "text-white/40" : "text-slate-400";
 
+  return (
+    <div className="step-container sm:px-6 lg:px-2 pt-6 sm:pt-10 pb-24 sm:pb-28">
+      
       {/* Step indicator */}
-      <div className="flex items-center gap-3 mb-4 sm:mb-6">
-        <div className="w-6 sm:w-8 h-[1.5px] bg-purple-500 rounded-full" />
-        <span className="font-mono text-[10px] sm:text-[11px] tracking-[0.2em] text-purple-500 uppercase font-bold">
-          Step 01 / 06
-        </span>
+      <div className="step-indicator-box">
+        <div className="step-line" />
+        <span className="step-text">Step 01 / 06</span>
       </div>
 
       {/* Heading */}
-      <h1 className={`text-[28px] sm:text-[36px] lg:text-[42px] font-bold leading-tight tracking-tight mb-2 sm:mb-3
-        ${isDark ? "text-white" : "text-slate-900"}`}>
+      <h1 className={`account-title ${textClass}`}>
         Set up your{" "}
         <span className="bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent">
           account.
@@ -37,20 +41,17 @@ const Step1Account = () => {
       </h1>
 
       {/* Subtitle */}
-      <p className={`text-[13px] sm:text-[15px] mb-7 sm:mb-10
-        ${isDark ? "text-white/60" : "text-slate-500"}`}>
+      <p className={`account-subtitle ${subTextClass}`}>
         Tell us who you are. We'll tailor the rest of the application to fit.
       </p>
 
       {/* Account Type Section */}
-      <div className="mb-8 sm:mb-10">
-        <p className={`text-[10px] font-bold tracking-[0.22em] uppercase mb-3 sm:mb-4
-          ${isDark ? "text-white/40" : "text-slate-400"}`}>
+      <div className="mb-10">
+        <p className={`section-label ${labelClass}`}>
           Account Type <span className="text-purple-500">*</span>
         </p>
 
-        {/* 1 col on mobile, 3 col on md+ */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+        <div className="account-grid">
           <AccountTypeCard
             type="individual"
             title="Individual"
@@ -76,9 +77,8 @@ const Step1Account = () => {
       </div>
 
       {/* Profile Photo */}
-      <div className="mb-6 sm:mb-8">
-        <p className={`text-[10px] font-bold tracking-[0.22em] uppercase mb-3 sm:mb-4
-          ${isDark ? "text-white/40" : "text-slate-400"}`}>
+      <div className="mb-8">
+        <p className={`section-label ${labelClass}`}>
           Profile Photo
         </p>
         <FileUpload
@@ -88,17 +88,14 @@ const Step1Account = () => {
       </div>
 
       {/* Government ID */}
-      <div className="mb-6 sm:mb-8">
-        <p className={`text-[10px] font-bold tracking-[0.22em] uppercase mb-3 sm:mb-4
-          ${isDark ? "text-white/40" : "text-slate-400"}`}>
+      <div className="mb-8">
+        <p className={`section-label ${labelClass}`}>
           Government ID
         </p>
 
-        {/* 1 col on mobile, 2 col on sm+ */}
-     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+        <div className="id-grid">
           <div>
-            <p className={`text-[10px] font-bold tracking-[0.18em] uppercase mb-2 sm:mb-3
-              ${isDark ? "text-white/30" : "text-slate-400"}`}>
+            <p className={`sub-label ${isDark ? "text-white/30" : "text-slate-400"}`}>
               Front of ID
             </p>
             <FileUpload
@@ -108,8 +105,7 @@ const Step1Account = () => {
             />
           </div>
           <div>
-            <p className={`text-[10px] font-bold tracking-[0.18em] uppercase mb-2 sm:mb-3
-              ${isDark ? "text-white/30" : "text-slate-400"}`}>
+            <p className={`sub-label ${isDark ? "text-white/30" : "text-slate-400"}`}>
               Back of ID
             </p>
             <FileUpload
@@ -120,8 +116,7 @@ const Step1Account = () => {
           </div>
         </div>
 
-        <p className={`mt-2.5 text-[11px] sm:text-[12px]
-          ${isDark ? "text-white/40" : "text-slate-400"}`}>
+        <p className={`mt-4 text-[12px] ${labelClass}`}>
           Required for KYC verification · JPG, PNG, or PDF
         </p>
       </div>

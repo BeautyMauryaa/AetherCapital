@@ -1,0 +1,123 @@
+
+.enterprise-info-container {
+  @apply max-w-3xl animate-in fade-in slide-in-from-bottom-4 duration-700;
+}
+
+.step-title {
+  @apply text-4xl font-semibold mb-3;
+  color: var(--text-main);
+}
+
+.step-subtitle {
+  @apply text-[15px];
+  color: var(--text-main);
+  opacity: 0.4;
+}
+
+/* Form Layout */
+.form-section { @apply space-y-8; }
+.form-grid-2 { @apply grid grid-cols-2 gap-4; }
+.input-group { @apply space-y-2; }
+
+/* Labels */
+.field-label {
+  @apply text-[11px] font-medium uppercase tracking-wider flex items-center gap-2;
+  color: var(--text-main);
+  opacity: 0.5;
+}
+
+/* Inputs & Selects */
+.base-input {
+  @apply w-full h-[52px] px-4 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500/50 transition-all;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+}
+
+.base-select {
+  @apply w-full h-[52px] px-4 rounded-xl appearance-none focus:outline-none focus:ring-1 focus:ring-purple-500/50 transition-all;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+}
+
+.select-option {
+  background-color: var(--card-bg);
+  color: var(--text-main);
+}
+
+/* Slider */
+.employee-slider {
+  @apply w-full h-1 rounded-lg appearance-none cursor-pointer accent-[#a855f7];
+  background-color: var(--border-color);
+}
+
+.slider-label {
+  @apply text-[10px] font-bold tracking-tighter;
+}
+
+/* Enterprise Details Divider */
+.divider-container { @apply flex items-center gap-4; }
+.divider-text {
+  @apply text-[11px] font-bold tracking-[0.2em] uppercase whitespace-nowrap;
+  color: var(--text-main);
+}
+.divider-line { @apply w-full h-[1px]; background-color: var(--border-color); }
+
+/* Counter Input */
+.counter-wrapper {
+  @apply flex items-center h-[52px] rounded-xl overflow-hidden px-4;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+}
+
+.counter-btn {
+  @apply transition-colors hover:text-purple-500;
+  color: var(--text-main);
+  opacity: 0.4;
+}
+
+.counter-input {
+  @apply flex-1 bg-transparent text-center text-sm focus:outline-none font-mono;
+  color: var(--text-main);
+}
+
+/* Toggle Card */
+.toggle-card {
+  @apply p-5 rounded-2xl transition-all duration-500;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+}
+
+.toggle-card-active {
+  background-color: rgba(168, 85, 247, 0.05);
+  border: 1px solid rgba(168, 85, 247, 0.2);
+}
+
+.toggle-switch {
+  @apply w-12 h-6 rounded-full relative transition-all duration-300;
+}
+
+.toggle-knob {
+  @apply absolute top-1 w-4 h-4 rounded-full bg-white transition-all duration-300;
+}
+
+/* Ticker Input */
+.ticker-input-wrapper {
+  @apply mt-6 pt-6 animate-in fade-in slide-in-from-top-2 duration-300;
+  border-top: 1px solid var(--border-color);
+}
+
+.ticker-input {
+  @apply w-full h-[52px] px-5 rounded-xl font-mono uppercase focus:outline-none focus:ring-1 focus:ring-purple-500/50 transition-all;
+  background-color: var(--bg-main);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+}
+
+.ticker-badge {
+  @apply absolute right-4 top-1/2 -translate-y-1/2 px-2 py-1 rounded text-[10px] font-mono;
+  background-color: var(--border-color);
+  color: var(--text-main);
+  opacity: 0.5;
+}

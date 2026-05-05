@@ -1,0 +1,29 @@
+@layer components {
+  .timezone-label {
+    @apply text-[10px] font-bold tracking-[0.2em] uppercase mb-4 block;
+    color: var(--text-main);
+    opacity: 0.4;
+  }
+
+  .timezone-trigger {
+    @apply w-full h-[56px] border rounded-xl px-5 flex items-center justify-between cursor-pointer transition-all;
+    background-color: rgba(255, 255, 255, 0.03);
+    border-color: var(--text-main);
+    border-spacing: 0.1;
+  }
+
+  :root.dark .timezone-trigger {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  :root.light .timezone-trigger {
+    border-color: rgba(15, 23, 42, 0.1);
+    background-color: rgba(0, 0, 0, 0.02);
+  }
+
+  .timezone-footer {
+    @apply text-[10px] mt-3 tracking-wide;
+    color: var(--text-main);
+    opacity: 0.2;
+  }
+}

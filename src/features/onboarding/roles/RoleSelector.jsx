@@ -68,4 +68,74 @@ const RoleSelector = () => {
   );
 };
 
+export default RoleSelector;import React from 'react';
+import { X, Plus } from 'lucide-react';
+import { useOnboardingStore } from "@/app/store/onboarding.store";
+import "./RoleSelector.css";
+
+const SUGGESTIONS = ["Viewer", "Editor", "Billing", "Support", "Developer", "Compliance"];
+
+const RoleSelector = () => {
+  const { formData, updateForm } = useOnboardingStore();
+  const selectedRoles = formData.roles || ["Admin"];
+
+  const toggleRole = (role) => {
+    const updated = selectedRoles.includes(role)
+      ? selectedRoles.filter((r) => r !== role)
+      : [...selectedRoles, role];
+    updateForm({ roles: updated });
+  };
+
+  return (
+    <div className="mb-10 w-full">
+      <p className="rs-label">
+        Role Assignment <span className="text-purple-500">*</span>
+      </p>
+
+      {/* Role Input Area */}
+      <div className="rs-input-container">
+        {selectedRoles.map((role) => (
+          <div key={role} className="rs-chip">
+            {role}
+            <button 
+              onClick={() => toggleRole(role)} 
+              className="rs-chip-close"
+              aria-label={`Remove ${role}`}
+            >
+              <X size={14} />
+            </button>
+          </div>
+        ))}
+        <input 
+          type="text"
+          placeholder={selectedRoles.length === 0 ? "Type to add roles..." : ""}
+          className="rs-input-field"
+        />
+      </div>
+
+      {/* Suggestions Pills */}
+      <div className="flex flex-wrap gap-3 mt-4">
+        {SUGGESTIONS.map((role) => {
+          if (selectedRoles.includes(role)) return null;
+
+          return (
+            <button
+              key={role}
+              onClick={() => toggleRole(role)}
+              className="rs-suggestion-btn"
+            >
+              <Plus size={12} className="rs-plus-icon" />
+              {role}
+            </button>
+          );
+        })}
+      </div>
+      
+      <p className="rs-helper-text">
+        Type to add a custom role or pick from suggestions below
+      </p>
+    </div>
+  );
+};
+
 export default RoleSelector;

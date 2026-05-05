@@ -5,10 +5,8 @@ const SignatureBox = () => {
   const sigCanvas = useRef({});
   const [imageURL, setImageURL] = useState(null);
 
-  // Function to clear the signature pad
   const clear = () => sigCanvas.current.clear();
 
-  // Function to save the signature as an image
   const save = () => {
     const dataURL = sigCanvas.current.getTrimmedCanvas().toDataURL('image/png');
     setImageURL(dataURL);

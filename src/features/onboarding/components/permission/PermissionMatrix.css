@@ -1,0 +1,43 @@
+@layer components {
+  .matrix-container {
+    @apply w-full border rounded-2xl overflow-hidden shadow-2xl transition-all duration-300;
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+  }
+
+  .matrix-header {
+    @apply grid grid-cols-5 border-b px-6 py-4;
+    background-color: rgba(0, 0, 0, 0.02);
+    border-color: var(--border-color);
+  }
+
+  :root.dark .matrix-header {
+    background-color: rgba(255, 255, 255, 0.02);
+  }
+
+  .matrix-row {
+    @apply grid grid-cols-5 items-center px-6 py-4 transition-colors;
+    border-color: var(--border-color);
+  }
+
+  .matrix-row:hover {
+    background-color: rgba(168, 85, 247, 0.03); /* Subtle purple hover */
+  }
+
+  .permission-btn {
+    @apply px-3 py-1.5 rounded-lg text-[10px] font-bold tracking-tighter transition-all duration-300;
+  }
+
+  .permission-btn-active {
+    @apply border shadow-lg;
+    color: #a855f7;
+    background-color: rgba(168, 85, 247, 0.1);
+    border-color: rgba(168, 85, 247, 0.3);
+    box-shadow: 0 0 15px rgba(168, 85, 247, 0.15);
+  }
+
+  .permission-btn-inactive {
+    @apply opacity-30 hover:opacity-100;
+    color: var(--text-main);
+  }
+}

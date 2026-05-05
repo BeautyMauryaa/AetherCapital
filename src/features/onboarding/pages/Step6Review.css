@@ -1,0 +1,55 @@
+/* Step6Review.css */
+
+.s6-container {
+  @apply max-w-4xl mx-auto px-4 pt-10 pb-28 font-sans;
+}
+
+/* Review Card Styles */
+.s6-review-card {
+  @apply mt-12 overflow-hidden rounded-[32px] shadow-sm transition-all duration-300;
+  border: 1px solid var(--border-color);
+}
+
+.s6-card-header {
+  @apply p-8 md:p-12 flex items-center gap-6 transition-colors duration-300;
+  background-color: var(--card-bg);
+}
+
+.s6-icon-wrapper {
+  @apply w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0;
+  background-color: var(--bg-main);
+  border: 1px solid var(--border-color);
+}
+
+.s6-profile-name {
+  @apply text-xl md:text-2xl font-semibold leading-tight;
+  color: var(--text-main);
+}
+
+.s6-meta-row {
+  @apply flex items-center gap-3 mt-1 text-[10px] font-bold tracking-widest uppercase;
+  color: var(--text-main);
+  opacity: 0.4;
+}
+
+.s6-dot {
+  @apply w-1 h-1 rounded-full;
+  background-color: var(--text-main);
+  opacity: 0.3;
+}
+
+/* Sections Container */
+.s6-sections-body {
+  @apply p-2 md:p-4 space-y-2 transition-colors duration-300;
+  background-color: var(--bg-main);
+}
+
+/* Footer & Validation */
+.s6-footer-nav {
+  @apply mt-12 pt-8 flex flex-col items-center;
+  border-top: 1px solid var(--border-color);
+}
+
+.s6-validation-warning {
+  @apply flex items-center gap-2 mt-6 text-[10px] text-gray-400 uppercase tracking-widest font-bold;
+}

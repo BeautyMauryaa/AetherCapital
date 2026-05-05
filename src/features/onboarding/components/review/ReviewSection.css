@@ -1,0 +1,33 @@
+@layer components {
+  .review-card {
+    @apply p-8 rounded-2xl transition-colors duration-300;
+    background-color: var(--bg-main);
+  }
+
+  /* When the background is the same as the body, we need a subtle border */
+  :root.light .review-card {
+    @apply border border-slate-100 shadow-sm;
+  }
+
+  .review-label {
+    @apply text-[9px] font-mono tracking-[0.15em] uppercase mb-1.5 opacity-40;
+    color: var(--text-main);
+  }
+
+  .review-value {
+    @apply text-[13px] font-medium;
+    color: var(--text-main);
+  }
+
+  .edit-button {
+    @apply flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold text-purple-500 uppercase transition-all hover:opacity-80 border;
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+  }
+
+  .address-block {
+    @apply mt-6 p-5 rounded-xl flex items-start gap-4 border transition-colors;
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+  }
+}

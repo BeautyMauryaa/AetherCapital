@@ -1,0 +1,69 @@
+
+.s4-container {
+  @apply w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-2 pt-6 sm:pt-10 pb-24 sm:pb-28;
+}
+
+.s4-label {
+  @apply text-[10px] font-bold tracking-[0.22em] uppercase mb-4;
+}
+
+/* Role Input & Pills */
+.s4-role-container {
+  @apply w-full min-h-[56px] px-3 py-2.5 rounded-xl border flex flex-wrap gap-2 items-center focus-within:border-purple-500/50 transition-all cursor-text;
+}
+
+.s4-role-pill {
+  @apply flex items-center gap-1.5 px-3 py-1 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-500 text-[12px] font-semibold;
+}
+
+.s4-suggestion-pill {
+  @apply flex items-center gap-1.5 px-4 py-1.5 rounded-full border border-dashed text-[11px] transition-all;
+}
+
+/* Access Matrix */
+.s4-matrix-card {
+  @apply w-full rounded-2xl border overflow-hidden shadow-sm;
+}
+
+.s4-matrix-header {
+  @apply grid grid-cols-5 px-6 py-3.5 border-b;
+}
+
+.s4-matrix-row {
+  @apply grid grid-cols-5 items-center px-6 py-4 transition-colors;
+}
+
+.s4-matrix-cell-btn {
+  @apply px-3 py-1.5 rounded-lg text-[10px] font-bold tracking-wider transition-all;
+}
+
+/* 2FA Section */
+.s4-2fa-card {
+  @apply flex items-center justify-between px-6 py-5 border rounded-2xl transition-all;
+}
+
+.s4-icon-box {
+  @apply p-2 rounded-lg transition-colors;
+}
+
+.s4-toggle-bg {
+  @apply relative w-12 h-6 rounded-full transition-colors duration-200;
+}
+
+.s4-toggle-knob {
+  @apply absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200;
+}
+
+.s4-method-btn {
+  @apply px-6 py-3 rounded-xl text-[14px] font-semibold border transition-all;
+}
+
+/* Theme Utilities */
+.s4-dark-bg { @apply bg-[#16161D] border-white/10; }
+.s4-light-bg { @apply bg-white border-slate-200; }
+
+.s4-dark-text { @apply text-white; }
+.s4-light-text { @apply text-slate-900; }
+
+.s4-dark-subtext { @apply text-white/40; }
+.s4-light-subtext { @apply text-slate-400; }

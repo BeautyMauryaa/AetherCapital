@@ -1,0 +1,44 @@
+/* RoleSelector.css */
+
+.rs-label {
+  @apply text-[10px] text-white/40 font-bold tracking-[0.2em] uppercase mb-4;
+}
+
+/* Main Input Container */
+.rs-input-container {
+  @apply w-full min-h-[56px] bg-white/[0.03] border border-white/10 rounded-xl p-3 flex flex-wrap gap-2 items-center transition-colors;
+}
+
+.rs-input-container:focus-within {
+  @apply border-purple-500/50;
+}
+
+/* Selected Role Chip */
+.rs-chip {
+  @apply flex items-center gap-2 bg-purple-500/20 border border-purple-500/30 text-purple-300 px-3 py-1.5 rounded-lg text-xs font-medium animate-in fade-in zoom-in duration-200;
+}
+
+.rs-chip-close {
+  @apply hover:text-white transition-colors;
+}
+
+.rs-input-field {
+  @apply bg-transparent border-none outline-none text-sm text-white flex-1 min-w-[120px] placeholder:text-white/20;
+}
+
+/* Suggestion Pills */
+.rs-suggestion-btn {
+  @apply group flex items-center gap-1.5 px-4 py-1.5 rounded-full border border-dashed border-white/10 text-white/40 transition-all text-[11px] font-medium;
+}
+
+.rs-suggestion-btn:hover {
+  @apply border-white/30 text-white/60;
+}
+
+.rs-plus-icon {
+  @apply text-white/20 group-hover:text-white/40;
+}
+
+.rs-helper-text {
+  @apply text-[10px] text-white/20 mt-3 tracking-wide;
+}

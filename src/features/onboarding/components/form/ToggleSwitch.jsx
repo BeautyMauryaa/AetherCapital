@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTheme } from "@/context/ThemeContext"; // Assuming this is your path
+import { useTheme } from "@/context/ThemeContext"; 
 
 const ToggleSwitch = ({ label, checked, onChange }) => {
   const { theme } = useTheme();

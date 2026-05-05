@@ -1,0 +1,20 @@
+@layer base {
+  :root {
+    /* Default: Light Mode */
+    --bg-main: #FFFFFF;
+    --text-main: #0F172A;
+  }
+
+  /* When the 'dark' class is present on the html element */
+  :root.dark {
+    --bg-main: #08080C;
+    --text-main: #FFFFFF;
+  }
+
+  /* Automatically apply to the body */
+  body {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    @apply transition-colors duration-300;
+  }
+}

@@ -1,5 +1,6 @@
 import React from "react";
 import { useOnboardingStore } from "@/app/store/onboarding.store";
+import "./PermissionMatrix.css";
 
 const MODULES = ["Dashboard", "Reports", "Users", "Billing", "Settings", "API"];
 const LEVELS = ["NONE", "READ", "WRITE", "ADMIN"];
@@ -14,34 +15,35 @@ const PermissionMatrix = () => {
 
   return (
     <div className="mt-10 w-full">
-      <h3 className="text-[10px] text-muted font-bold tracking-[0.2em] uppercase mb-6">
+      <h3 className="text-[10px] text-main font-bold tracking-[0.2em] uppercase mb-6 opacity-40">
         Access Level Matrix
       </h3>
 
-      <div className="w-full bg-card border border-border rounded-2xl overflow-hidden shadow-2xl">
-        <div className="grid grid-cols-5 border-b border-border bg-card/50 px-6 py-4">
-          <div className="text-[10px] text-muted font-bold tracking-widest uppercase">Module</div>
+      <div className="matrix-container">
+        {/* Header */}
+        <div className="matrix-header">
+          <div className="text-[10px] text-main font-bold tracking-widest uppercase opacity-40">Module</div>
           {LEVELS.map((level) => (
-            <div key={level} className="text-center text-[10px] text-muted font-bold tracking-widest uppercase">
+            <div key={level} className="text-center text-[10px] text-main font-bold tracking-widest uppercase opacity-40">
               {level}
             </div>
           ))}
         </div>
 
-        <div className="divide-y divide-border">
+        {/* Rows */}
+        <div className="divide-y divide-border" style={{ borderColor: 'var(--border-color)' }}>
           {MODULES.map((mod) => (
-            <div key={mod} className="grid grid-cols-5 items-center px-6 py-4 hover:bg-card/50 transition-colors">
-              <div className="text-sm font-medium text-foreground/70">{mod}</div>
+            <div key={mod} className="matrix-row">
+              <div className="text-sm font-medium text-main opacity-70">{mod}</div>
               {LEVELS.map((lvl) => {
                 const isActive = permissions[mod] === lvl;
                 return (
                   <div key={lvl} className="flex justify-center">
                     <button
                       onClick={() => setPermission(mod, lvl)}
-                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold tracking-tighter transition-all duration-300
-                        ${isActive
-                          ? "text-blue-400 bg-blue-500/10 border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.15)]"
-                          : "text-muted/40 hover:text-muted"}`}
+                      className={`permission-btn ${
+                        isActive ? "permission-btn-active" : "permission-btn-inactive"
+                      }`}
                     >
                       {lvl}
                     </button>
@@ -53,8 +55,8 @@ const PermissionMatrix = () => {
         </div>
       </div>
 
-      <p className="text-[9px] text-muted/50 mt-4 text-center italic tracking-wide">
-        Click each cell to cycle through permission levels
+      <p className="text-[9px] text-main opacity-30 mt-4 text-center italic tracking-wide">
+        Select a cell to update access rights per module
       </p>
     </div>
   );

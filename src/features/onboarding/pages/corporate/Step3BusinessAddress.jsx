@@ -3,6 +3,7 @@ import { useOnboardingStore } from "@/app/store/onboarding.store";
 import NavigationButtons from "../../components/common/NavigationButtons";
 import { useTheme } from "@/context/ThemeContext";
 import { MapPin, Clock, ChevronDown, Plus, Minus } from "lucide-react";
+import styles from "./Step3BusinessAddress.module.css";
 
 const COUNTRIES_WITH_FLAGS = [
   { code: "US", flag: "🇺🇸", name: "United States" },
@@ -42,23 +43,20 @@ const TIMEZONE_BY_COUNTRY = {
   PH: "Asia/Manila", ID: "Asia/Jakarta", NL: "Europe/Amsterdam",
   IT: "Europe/Rome", ES: "Europe/Madrid", KR: "Asia/Seoul", SA: "Asia/Riyadh",
 };
-
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
-// Convert "09:00" to total minutes
-const toMinutes = (t) => {
-  const [h, m] = t.split(":").map(Number);
-  return h * 60 + m;
-};
-
-// Convert total minutes to "HH:MM"
-const toTime = (mins) => {
-  const h = Math.floor(mins / 60) % 24;
-  const m = mins % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-};
-
 const TimeControl = ({ value, onChange, isDark }) => {
+  const toMinutes = (t) => {
+    const [h, m] = t.split(":").map(Number);
+    return h * 60 + m;
+  };
+
+  const toTime = (mins) => {
+    const h = Math.floor(mins / 60) % 24;
+    const m = mins % 60;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  };
+
   const adjust = (delta) => {
     const mins = toMinutes(value) + delta * 60;
     const clamped = Math.max(0, Math.min(mins, 23 * 60));
@@ -68,22 +66,11 @@ const TimeControl = ({ value, onChange, isDark }) => {
   return (
     <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border
       ${isDark ? "bg-[#0B0B0E] border-white/10" : "bg-slate-100 border-slate-200"}`}>
-      <button
-        onClick={() => adjust(-1)}
-        className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all
-          ${isDark ? "hover:bg-white/10 text-white/40 hover:text-white" : "hover:bg-slate-200 text-slate-400 hover:text-slate-700"}`}
-      >
+      <button onClick={() => adjust(-1)} className={isDark ? "text-white/40 hover:text-white" : "text-slate-400 hover:text-slate-700"}>
         <Minus size={12} />
       </button>
-      <span className={`text-[12px] font-mono w-12 text-center
-        ${isDark ? "text-white/80" : "text-slate-700"}`}>
-        {value}
-      </span>
-      <button
-        onClick={() => adjust(1)}
-        className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all
-          ${isDark ? "hover:bg-white/10 text-white/40 hover:text-white" : "hover:bg-slate-200 text-slate-400 hover:text-slate-700"}`}
-      >
+      <span className={`text-[12px] font-mono w-12 text-center ${isDark ? "text-white/80" : "text-slate-700"}`}>{value}</span>
+      <button onClick={() => adjust(1)} className={isDark ? "text-white/40 hover:text-white" : "text-slate-400 hover:text-slate-700"}>
         <Plus size={12} />
       </button>
     </div>
@@ -104,53 +91,20 @@ const Step3BusinessAddress = () => {
   const selectedCountry = COUNTRIES_WITH_FLAGS.find((c) => c.code === (formData.country || "US"));
   const handleFieldChange = (name, value) => updateForm({ [name]: value });
 
-  const handleCountryChange = (code) => {
-    updateForm({ country: code, timezone: TIMEZONE_BY_COUNTRY[code] || "UTC" });
-    setShowCountryDrop(false);
-  };
-
   const toggleDay = (day) => {
     updateForm({ operatingHours: { ...hours, [day]: { ...hours[day], active: !hours[day].active } } });
   };
 
-  const updateHour = (day, field, value) => {
-    updateForm({ operatingHours: { ...hours, [day]: { ...hours[day], [field]: value } } });
-  };
-
-  const hasAddress = formData.address1?.trim();
-
-  const inputClass = `w-full h-[52px] px-4 rounded-xl border text-[14px] transition-all
-    focus:outline-none focus:ring-1 focus:ring-purple-500/50
-    ${isDark
-      ? "bg-[#16161D] border-white/10 text-white placeholder:text-white/25"
-      : "bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"
-    }`;
-
-  const labelClass = `text-[10px] font-bold tracking-[0.22em] uppercase mb-3
-    ${isDark ? "text-white/40" : "text-slate-400"}`;
-
-  const dividerClass = `w-full h-[1px] ${isDark ? "bg-white/10" : "bg-slate-200"}`;
-
-  const sectionTitleClass = `text-[10px] font-bold tracking-[0.25em] uppercase whitespace-nowrap
-    ${isDark ? "text-white/40" : "text-slate-400"}`;
-
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-2 pt-6 sm:pt-10 pb-24 sm:pb-28">
-
-      {/* Header */}
+    <div className={`onboarding-container ${isDark ? "dark-theme" : "light-theme"}`}>
+      {/* Header Section */}
       <div className="mb-8 sm:mb-10">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-6 sm:w-8 h-[1.5px] bg-purple-500 rounded-full" />
-          <span className="font-mono text-[10px] sm:text-[11px] tracking-[0.2em] text-purple-500 uppercase font-bold">
-            Step 03 / 06
-          </span>
+          <span className="step-label">Step 03 / 06</span>
         </div>
-        <h1 className={`text-[28px] sm:text-[36px] lg:text-[42px] font-bold leading-tight tracking-tight mb-2
-          ${isDark ? "text-white" : "text-slate-900"}`}>
-          Address &{" "}
-          <span className="bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent">
-            location.
-          </span>
+        <h1 className="main-heading">
+          Address & <span className="bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent">location.</span>
         </h1>
         <p className={`text-[13px] sm:text-[15px] ${isDark ? "text-white/50" : "text-slate-500"}`}>
           Where your business operates and your availability.
@@ -158,196 +112,83 @@ const Step3BusinessAddress = () => {
       </div>
 
       <div className="space-y-12">
-
-        {/* PRIMARY ADDRESS */}
+        {/* Address Inputs */}
         <section>
           <div className="flex items-center gap-4 mb-8">
-            <h3 className={sectionTitleClass}>Primary Business Address</h3>
-            <div className={dividerClass} />
+            <h3 className="field-label !mb-0">Primary Business Address</h3>
+            <div className={`flex-1 h-[1px] ${isDark ? "bg-white/10" : "bg-slate-200"}`} />
           </div>
 
           <div className="grid grid-cols-1 gap-6">
-            {/* Country */}
             <div>
-              <p className={labelClass}>Country <span className="text-purple-500">*</span></p>
-              <div className="relative">
-                <button
-                  onClick={() => setShowCountryDrop(!showCountryDrop)}
-                  className={`w-full h-[52px] px-4 rounded-xl border flex items-center justify-between transition-all
-                    ${isDark ? "bg-[#16161D] border-white/10" : "bg-white border-slate-200"}`}
-                >
-                  <span className="flex items-center gap-3">
-                    <span className="text-lg">{selectedCountry?.flag}</span>
-                    <span className={isDark ? "text-white" : "text-slate-900"}>{selectedCountry?.name}</span>
-                  </span>
-                  <ChevronDown size={16} className={isDark ? "text-white/30" : "text-slate-400"} />
-                </button>
-                {showCountryDrop && (
-                  <div className={`absolute z-50 top-full mt-1 w-full rounded-xl overflow-hidden shadow-2xl max-h-64 overflow-y-auto border
-                    ${isDark ? "bg-[#16161D] border-white/10" : "bg-white border-slate-200"}`}>
-                    {COUNTRIES_WITH_FLAGS.map((c) => (
-                      <div
-                        key={c.code}
-                        onClick={() => handleCountryChange(c.code)}
-                        className={`px-4 py-3 cursor-pointer flex items-center gap-3 transition-colors text-[13px]
-                          ${isDark ? "text-white/70 hover:bg-white/5 hover:text-white" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
-                      >
-                        <span>{c.flag}</span>{c.name}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <p className="field-label">Country <span className="text-purple-500">*</span></p>
+              <button 
+                onClick={() => setShowCountryDrop(!showCountryDrop)}
+                className="base-input flex items-center justify-between text-left"
+              >
+                <span className="flex items-center gap-3">
+                  <span>{selectedCountry?.flag}</span>
+                  <span>{selectedCountry?.name}</span>
+                </span>
+                <ChevronDown size={16} />
+              </button>
             </div>
 
-            {/* Address Line 1 */}
             <div>
-              <p className={labelClass}>Address Line 1 <span className="text-purple-500">*</span></p>
-              <input className={inputClass} placeholder="Street number and name"
-                value={formData.address1 || ""} onChange={(e) => handleFieldChange("address1", e.target.value)} />
+              <p className="field-label">Address Line 1 <span className="text-purple-500">*</span></p>
+              <input 
+                className="base-input" 
+                placeholder="Street number and name"
+                value={formData.address1 || ""} 
+                onChange={(e) => handleFieldChange("address1", e.target.value)} 
+              />
             </div>
 
-            {/* Address Line 2 */}
-            <div>
-              <p className={labelClass}>Address Line 2</p>
-              <input className={inputClass} placeholder="Apt, suite, unit, building (optional)"
-                value={formData.address2 || ""} onChange={(e) => handleFieldChange("address2", e.target.value)} />
-            </div>
-
-            {/* City / State / Zip */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <p className={labelClass}>City <span className="text-purple-500">*</span></p>
-                <input className={inputClass} value={formData.city || ""} onChange={(e) => handleFieldChange("city", e.target.value)} />
-              </div>
-              <div>
-                <p className={labelClass}>State</p>
-                <input className={inputClass} value={formData.state || ""} onChange={(e) => handleFieldChange("state", e.target.value)} />
-              </div>
-              <div>
-                <p className={labelClass}>Zip <span className="text-purple-500">*</span></p>
-                <input className={inputClass} value={formData.zip || ""} onChange={(e) => handleFieldChange("zip", e.target.value)} />
-              </div>
+              {["City", "State", "Zip"].map((field) => (
+                <div key={field}>
+                  <p className="field-label">{field}</p>
+                  <input 
+                    className="base-input" 
+                    value={formData[field.toLowerCase()] || ""} 
+                    onChange={(e) => handleFieldChange(field.toLowerCase(), e.target.value)} 
+                  />
+                </div>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* Map Preview */}
-        <div className={`rounded-2xl overflow-hidden flex h-32 border
-          ${isDark ? "bg-[#16161D] border-white/10" : "bg-white border-slate-200"}`}>
-          <div className={`w-1/3 flex items-center justify-center relative border-r
-            ${isDark ? "border-white/10" : "border-slate-200"}`}>
-            <div className="absolute inset-0 bg-[radial-gradient(#a855f7_1px,transparent_1px)] [background-size:16px_16px] opacity-10" />
-            <MapPin size={24} className={hasAddress ? "text-[#a855f7] animate-pulse" : isDark ? "text-white/10" : "text-slate-300"} />
-          </div>
-          <div className="p-6 flex flex-col justify-center">
-            <h4 className="text-[10px] font-bold text-[#a855f7] uppercase tracking-widest mb-1">Location Preview</h4>
-            <p className={`text-[12px] ${isDark ? "text-white/40" : "text-slate-400"}`}>
-              {hasAddress ? `${formData.address1}, ${formData.city || ""}` : "Waiting for address input..."}
-            </p>
-          </div>
-        </div>
-
-        {/* Mailing Toggle */}
-        <label className="flex items-center gap-3 cursor-pointer group">
-          <div
-            onClick={() => handleFieldChange("sameAsPrimary", !formData.sameAsPrimary)}
-            className={`w-5 h-5 rounded flex items-center justify-center transition-all border
-              ${formData.sameAsPrimary !== false
-                ? "bg-purple-500 border-purple-500"
-                : isDark ? "border-white/10" : "border-slate-300"
-              }`}
-          >
-            {formData.sameAsPrimary !== false && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
-          </div>
-          <span className={`text-[12px] ${isDark ? "text-white/40" : "text-slate-500"}`}>
-            Mailing address is the same as primary
-          </span>
-        </label>
-
-        {/* Timezone */}
-        <div>
-          <p className={labelClass}>Time Zone <span className="text-purple-500">*</span></p>
-          <div className="relative">
-            <select
-              value={formData.timezone || TIMEZONE_BY_COUNTRY[formData.country || "US"]}
-              onChange={(e) => handleFieldChange("timezone", e.target.value)}
-              className={`w-full h-[52px] px-4 pr-10 rounded-xl border text-[14px] appearance-none cursor-pointer
-                focus:outline-none focus:ring-1 focus:ring-purple-500/50 transition-all
-                ${isDark ? "bg-[#16161D] border-white/10 text-white" : "bg-white border-slate-200 text-slate-900"}`}
-            >
-              <option value="America/New_York">Eastern Standard Time (EST)</option>
-              <option value="America/Chicago">Central Standard Time (CST)</option>
-              <option value="America/Denver">Mountain Standard Time (MST)</option>
-              <option value="America/Los_Angeles">Pacific Standard Time (PST)</option>
-              <option value="Europe/London">Greenwich Mean Time (GMT)</option>
-              <option value="Asia/Kolkata">India Standard Time (IST)</option>
-              <option value="Asia/Dubai">Gulf Standard Time (GST)</option>
-              <option value="Asia/Singapore">Singapore Standard Time (SGT)</option>
-            </select>
-            <ChevronDown size={16} className={`absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none
-              ${isDark ? "text-white/30" : "text-slate-400"}`} />
-          </div>
-          <p className={`mt-2 text-[11px] italic uppercase tracking-tighter
-            ${isDark ? "text-white/20" : "text-slate-400"}`}>
-            Auto-detected from country
-          </p>
-        </div>
-
         {/* Operating Hours */}
         <section>
           <div className="flex items-center gap-4 mb-8">
-            <h3 className={`${sectionTitleClass} flex items-center gap-2`}>
+            <h3 className="field-label !mb-0 flex items-center gap-2">
               <Clock size={14} className="text-[#a855f7]" />
               Operating Hours
             </h3>
-            <div className={dividerClass} />
+            <div className={`flex-1 h-[1px] ${isDark ? "bg-white/10" : "bg-slate-200"}`} />
           </div>
 
-          {/* Day toggles */}
           <div className="flex flex-wrap gap-2 mb-6">
             {DAYS.map((day) => (
               <button
                 key={day}
                 onClick={() => toggleDay(day)}
-                className={`px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all
-                  ${hours[day].active
-                    ? "bg-gradient-to-r from-purple-500 to-violet-500 text-white shadow-lg shadow-purple-500/20"
-                    : isDark
-                      ? "bg-[#16161D] border border-white/10 text-white/30 hover:text-white/60"
-                      : "bg-white border border-slate-200 text-slate-400 hover:text-slate-600"
-                  }`}
+                className={`day-toggle ${hours[day].active ? 'day-toggle-active' : (isDark ? 'border-white/10 text-white/30' : 'border-slate-200 text-slate-400')}`}
               >
                 {day.slice(0, 3)}
               </button>
             ))}
           </div>
 
-          {/* Time rows */}
           <div className="space-y-2.5">
             {DAYS.filter(day => hours[day].active).map((day) => (
-              <div
-                key={day}
-                className={`flex items-center justify-between p-4 px-6 rounded-2xl border transition-all
-                  ${isDark ? "bg-[#16161D] border-white/10" : "bg-white border-slate-200"}`}
-              >
-                <span className={`text-[14px] font-medium w-28
-                  ${isDark ? "text-white/80" : "text-slate-700"}`}>
-                  {day}
-                </span>
-
+              <div key={day} className={`flex items-center justify-between p-4 px-6 rounded-2xl border ${isDark ? "bg-[#16161D] border-white/10" : "bg-white border-slate-200"}`}>
+                <span className={`text-[14px] font-medium w-28 ${isDark ? "text-white/80" : "text-slate-700"}`}>{day}</span>
                 <div className="flex items-center gap-3">
-                  <TimeControl
-                    value={hours[day].open}
-                    onChange={(v) => updateHour(day, "open", v)}
-                    isDark={isDark}
-                  />
+                  <TimeControl value={hours[day].open} isDark={isDark} onChange={(v) => updateForm({ operatingHours: { ...hours, [day]: { ...hours[day], open: v } } })} />
                   <span className={isDark ? "text-white/20" : "text-slate-300"}>—</span>
-                  <TimeControl
-                    value={hours[day].close}
-                    onChange={(v) => updateHour(day, "close", v)}
-                    isDark={isDark}
-                  />
+                  <TimeControl value={hours[day].close} isDark={isDark} onChange={(v) => updateForm({ operatingHours: { ...hours, [day]: { ...hours[day], close: v } } })} />
                 </div>
               </div>
             ))}

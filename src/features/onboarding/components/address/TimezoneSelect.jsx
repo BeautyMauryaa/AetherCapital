@@ -1,33 +1,33 @@
 import React from 'react';
 import { ChevronDown, Globe } from 'lucide-react';
 import { useOnboardingStore } from "@/app/store/onboarding.store";
+import "./TimezoneSelect.css";
 
 const TimezoneSelect = () => {
   const { formData, updateForm } = useOnboardingStore();
   
-  // Default to London to match image_5a383b.png
+  // Default to London
   const selectedTimezone = formData.timezone || "Europe/London";
 
   return (
     <div className="w-full mb-10">
-      {/* Label Styling */}
-      <label className="text-[10px] text-white/40 font-bold tracking-[0.2em] uppercase mb-4 block">
+      <label className="timezone-label">
         Time Zone
       </label>
 
       <div className="relative group">
         {/* Custom Dropdown Trigger */}
-        <div className="w-full h-[56px] bg-white/[0.03] border border-white/10 rounded-xl px-5 flex items-center justify-between cursor-pointer group-hover:border-white/20 transition-all focus-within:border-purple-500/50">
+        <div className="timezone-trigger group-hover:border-purple-500/50">
           <div className="flex items-center gap-3">
-            <Globe size={18} className="text-white/20" />
-            <span className="text-sm font-medium text-white/90">
+            <Globe size={18} className="opacity-20" />
+            <span className="text-sm font-medium opacity-90">
               {selectedTimezone}
             </span>
           </div>
-          <ChevronDown size={18} className="text-white/20 group-hover:text-white/40 transition-colors" />
+          <ChevronDown size={18} className="opacity-20 group-hover:opacity-40 transition-opacity" />
         </div>
 
-        {/* This is a hidden real select for accessibility/form submission if needed */}
+        {/* Hidden native select for functionality */}
         <select
           value={selectedTimezone}
           onChange={(e) => updateForm({ timezone: e.target.value })}
@@ -40,7 +40,7 @@ const TimezoneSelect = () => {
         </select>
       </div>
 
-      <p className="text-[10px] text-white/20 mt-3 tracking-wide">
+      <p className="timezone-footer">
         Auto-detected from country — <span className="italic">editable</span>
       </p>
     </div>
