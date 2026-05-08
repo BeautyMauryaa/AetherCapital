@@ -23,20 +23,28 @@ function useIsDark() {
 const Step5CorpCompliance = () => {
   const { formData, nextStep, prevStep } = useOnboardingStore();
   const isDark = useIsDark();
+const handleContinue = () => {
+  const requiredDocs = ['incorp_cert', 'tax_id', 'proof_addr', 'ubo_registry'];
 
-  const handleContinue = () => {
-    // These IDs must match exactly what DocumentChecklist uses
-    const requiredDocs = ['incorp_cert', 'tax_id', 'proof_addr', 'ubo_registry'];
-    const uploadedDocs = formData.documents || {};
-    const missing = requiredDocs.filter(id => !uploadedDocs[id]);
+  const missing = requiredDocs.filter((id) => {
+    // File object still in formData (same session)
+    const entry = formData.documents?.[id];
+    if (entry instanceof File) return false; // ✅ present
 
-    if (missing.length > 0) {
-      alert(`Please upload all required documents before continuing.\nMissing: ${missing.length} document(s).`);
-      return;
-    }
+    // Persisted metadata name written by store
+    const persistedName = formData.documents__names?.[id];
+    if (persistedName) return false; // ✅ present
 
-    nextStep();
-  };
+    return true; // ❌ missing
+  });
+
+  if (missing.length > 0) {
+    alert(`Please upload all required documents before continuing.\nMissing: ${missing.length} document(s).`);
+    return;
+  }
+
+  nextStep();
+};
 
   return (
     <div className="max-w-3xl pb-20 transition-colors duration-300">

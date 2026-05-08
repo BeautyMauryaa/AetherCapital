@@ -15,39 +15,59 @@ const DocumentChecklist = () => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  const [uploaded, setUploaded] = useState({});
-
   const handleUpload = (docId, file) => {
     if (!file) return;
-
-    // Track in local state for UI
-    setUploaded((prev) => ({ ...prev, [docId]: file }));
-
-    // Store in Zustand as { docId: File } object
-    const existing = formData.documents || {};
     updateForm({
-      documents: { ...existing, [docId]: file },
+      documents: {
+        ...(formData.documents || {}),
+        [docId]: file, // ✅ File object — store handles routing to fileStore
+      },
     });
+  };
+
+  // ── Read upload status from formData (set by store after updateForm) ──────
+  // After store processes it: File objects go to fileStore,
+  // names go to formData.documents__names
+  const getDocName = (docId) => {
+    // 1. Still in formData.documents as File (same session, no refresh)
+    const entry = formData.documents?.[docId];
+    if (entry instanceof File) return entry.name;
+    // 2. Persisted metadata after store processed it
+    return formData.documents__names?.[docId] ?? null;
   };
 
   return (
     <div className="space-y-3">
       {DOCS.map((doc) => {
-        const isUploaded = !!uploaded[doc.id];
+        const docName    = getDocName(doc.id);
+        const isUploaded = !!docName;
 
         return (
           <div
             key={doc.id}
             className={`flex justify-between items-center p-4 rounded-xl border transition-all
               ${isUploaded
-                ? isDark ? "border-emerald-500/30 bg-emerald-500/5" : "border-emerald-400/30 bg-emerald-50"
-                : isDark ? "border-white/10 bg-white/5" : "border-slate-200 bg-white"
+                ? isDark
+                  ? "border-emerald-500/30 bg-emerald-500/5"
+                  : "border-emerald-400/30 bg-emerald-50"
+                : isDark
+                  ? "border-white/10 bg-white/5"
+                  : "border-slate-200 bg-white"
               }`}
           >
-            <span className={`text-[14px] font-medium
-              ${isDark ? "text-white/80" : "text-slate-700"}`}>
-              {doc.label}
-            </span>
+            <div className="flex flex-col gap-0.5">
+              <span className={`text-[14px] font-medium
+                ${isDark ? "text-white/80" : "text-slate-700"}`}>
+                {doc.label}
+              </span>
+              {/* ✅ Show filename under label when uploaded */}
+              {isUploaded && (
+                <span className={`text-[11px] font-mono italic
+                  ${isDark ? "text-white/30" : "text-slate-400"}`}>
+                  {docName}
+                </span>
+              )}
+            </div>
 
             {isUploaded ? (
               <div className="flex items-center gap-2 text-emerald-500">
