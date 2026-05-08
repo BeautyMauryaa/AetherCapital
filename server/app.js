@@ -6,21 +6,26 @@ import onboardingRoutes from "./src/routes/onboarding.routes.js";
 import uploadRoutes from "./src/routes/upload.routes.js";
 import formRoutes from "./src/routes/form.routes.js";
 import { errorMiddleware } from "./src/middleware/error.middleware.js";
-import { getAuthUrl, getTokensFromCode } from "./src/config/googleDrive.config.js";
+import {
+  getAuthUrl,
+  getTokensFromCode,
+} from "./src/config/googleDrive.config.js";
 
 const app = express();
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
-app.use(cors({
-  origin: [
-    process.env.FRONTEND_URL || "https://aethercapitall.netlify.app",
-    "http://localhost:5173",
-    "http://localhost:3000",
-  ],
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: [
+      process.env.FRONTEND_URL || "https://aethercapital3.onrender.com",
+      "http://localhost:5173",
+      "http://localhost:3000",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  }),
+);
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
@@ -63,7 +68,12 @@ app.use("/api/form", formRoutes);
 
 // ─── 404 ─────────────────────────────────────────────────────────────────────
 app.use((req, res) => {
-  res.status(404).json({ success: false, message: `Route not found: ${req.method} ${req.url}` });
+  res
+    .status(404)
+    .json({
+      success: false,
+      message: `Route not found: ${req.method} ${req.url}`,
+    });
 });
 
 // ─── Global Error Handler ─────────────────────────────────────────────────────
