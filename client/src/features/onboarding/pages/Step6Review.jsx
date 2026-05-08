@@ -31,14 +31,27 @@ const handleEdit = (targetStep) => {
   );
 
   // ── Helper to show file status ─────────────────────────────────────────────
+  // const fileLabel = (field) => {
+  //   const val = formData[field];
+  //   if (!val) return "Not uploaded";
+  //   if (val instanceof File) return `✓ ${val.name}`;
+  //   if (val?.name) return `✓ ${val.name}`;
+  //   if (val?.fileName) return `✓ ${val.fileName}`;
+  //   return "Uploaded";
+  // };
+
+
   const fileLabel = (field) => {
-    const val = formData[field];
-    if (!val) return "Not uploaded";
-    if (val instanceof File) return `✓ ${val.name}`;
-    if (val?.name) return `✓ ${val.name}`;
-    if (val?.fileName) return `✓ ${val.fileName}`;
-    return "Uploaded";
-  };
+  // Check persisted metadata name first
+  const metaName = formData[`${field}__name`];
+  if (metaName) return `✓ ${metaName}`;
+  // Fallback for File still in memory (same session, no refresh)
+  const val = formData[field];
+  if (!val) return "Not uploaded";
+  if (val instanceof File) return `✓ ${val.name}`;
+  return "Not uploaded";
+};
+
 
   const handleSubmit = () => {
     if (!canSubmit || isSubmitting) return;
@@ -163,9 +176,9 @@ const handleEdit = (targetStep) => {
             onEdit={() => setStep(5)}
             fields={[
               { label: "RISK SCORE", value: formData.answers ? `${Object.values(formData.answers || {}).filter(v => v === true).length * 12.5}/100` : "0/100" },
-              { label: "DOCUMENTS",  value: formData.documents
-                  ? `${Object.keys(formData.documents).length} file(s) attached`
-                  : "None uploaded" },
+             { label: "DOCUMENTS", value: formData.documents__names
+    ? `${Object.keys(formData.documents__names).length} file(s) attached`
+    : "None uploaded" },
             ]}
           />
         </div>

@@ -16,40 +16,55 @@ function useIsDark() {
   return isDark;
 }
 
+const requiredDocs = [
+  { id: 'incorp_cert',  label: 'Certificate of Incorporation' },
+  { id: 'tax_id',       label: 'Tax Registration'             },
+  { id: 'proof_addr',   label: 'Proof of Address'             },
+  { id: 'ubo_registry', label: 'Beneficial Owner Declaration' },
+];
+
 const Step5CorpCompliance = () => {
-  const { formData, nextStep, prevStep, updateForm } = useOnboardingStore(); // Using updateForm for consistency
+  const { formData, nextStep, prevStep, updateForm } = useOnboardingStore();
   const fileInputRefs = useRef({});
   const [uploadingId, setUploadingId] = useState(null);
   const isDark = useIsDark();
 
-  const requiredDocs = [
-    { id: 'incorp_cert',  label: 'Certificate of Incorporation' },
-    { id: 'tax_id',       label: 'Tax Registration'             },
-    { id: 'proof_addr',   label: 'Proof of Address'             },
-    { id: 'ubo_registry', label: 'Beneficial Owner Declaration' },
-  ];
-
   const handleUploadClick = (docId) => fileInputRefs.current[docId]?.click();
 
-  const handleFileChange = async (event, docId) => {
+  const handleFileChange = (event, docId) => {
     const file = event.target.files[0];
     if (!file) return;
+
     setUploadingId(docId);
-    
-    // Simulating upload delay
     setTimeout(() => {
+      // ✅ Store the actual File object, NOT file.name
       updateForm({
-        documents: { ...(formData.documents || {}), [docId]: file.name },
+        documents: {
+          ...(formData.documents || {}),
+          [docId]: file,  // <-- File object goes here
+        },
       });
       setUploadingId(null);
     }, 1200);
   };
 
-  // --- VALIDATION: Ensure all docs are present before next step ---
+  // ── Helper: get display name for a doc slot ──────────────────────────────
+  // After our store fix, documents[docId] is a File object.
+  // We also check documents__names[docId] for the persisted metadata name.
+  const getDocName = (docId) => {
+    const entry = formData.documents?.[docId];
+    if (entry instanceof File) return entry.name;
+    if (typeof entry === 'string') return entry; // fallback
+    // Check persisted metadata written by new updateForm
+    return formData.documents__names?.[docId] ?? null;
+  };
+
   const handleNext = () => {
-    const uploadedCount = Object.keys(formData.documents || {}).length;
-    if (uploadedCount < requiredDocs.length) {
-      alert("Please upload all required compliance documents to continue.");
+    const uploaded = requiredDocs.filter(
+      (doc) => !!getDocName(doc.id)
+    );
+    if (uploaded.length < requiredDocs.length) {
+      alert(`Please upload all required compliance documents to continue.`);
       return;
     }
     nextStep();
@@ -57,30 +72,26 @@ const Step5CorpCompliance = () => {
 
   const tokens = isDark
     ? {
-        row: { background: 'rgba(30, 30, 46, 0.5)', border: '1px solid rgba(255,255,255,0.05)' },
+        row:         { background: 'rgba(30, 30, 46, 0.5)', border: '1px solid rgba(255,255,255,0.05)' },
         rowUploaded: { background: 'rgba(168, 85, 247, 0.05)', border: '1px solid rgba(168, 85, 247, 0.3)' },
-        label: { color: '#94a3b8' },
+        label:         { color: '#94a3b8' },
         labelUploaded: { color: '#e2e8f0' },
-        pill: { background: 'rgba(255,255,255,0.03)', color: '#64748b' },
+        pill:         { background: 'rgba(255,255,255,0.03)', color: '#64748b' },
         pillUploaded: { background: 'rgba(168, 85, 247, 0.2)', color: '#a855f7' },
       }
     : {
-        row: { background: '#ffffff', border: '1px solid #e2e8f0' },
+        row:         { background: '#ffffff', border: '1px solid #e2e8f0' },
         rowUploaded: { background: '#f5f3ff', border: '1px solid #ddd6fe' },
-        label: { color: '#64748b' },
+        label:         { color: '#64748b' },
         labelUploaded: { color: '#581c87' },
-        pill: { background: '#f1f5f9', color: '#94a3b8' },
+        pill:         { background: '#f1f5f9', color: '#94a3b8' },
         pillUploaded: { background: '#ede9fe', color: '#7c3aed' },
       };
 
   return (
     <div className="max-w-3xl pb-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      {/* CSS Keyframes for the Loader */}
       <style>{`
-        @keyframes custom-spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
+        @keyframes custom-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .animate-spin-slow { animation: custom-spin 1s linear infinite; }
       `}</style>
 
@@ -97,21 +108,23 @@ const Step5CorpCompliance = () => {
         </p>
       </div>
 
-      {/* Risk & Questionnaire Sections */}
+      {/* Risk & Questionnaire */}
       <div className="space-y-12 mb-16">
         <RiskScore />
         <Questionnaire />
       </div>
 
-      {/* Document Section */}
+      {/* Document Upload Rows */}
       <div className="mb-6">
-        <h3 className="text-[11px] font-bold tracking-[0.25em] uppercase opacity-40 mb-6" style={{ color: 'var(--text-main)' }}>
+        <h3 className="text-[11px] font-bold tracking-[0.25em] uppercase opacity-40 mb-6"
+          style={{ color: 'var(--text-main)' }}>
           Required Documentation
         </h3>
-        
+
         <div className="flex flex-col gap-3">
           {requiredDocs.map((doc) => {
-            const isUploaded = !!formData.documents?.[doc.id];
+            const docName    = getDocName(doc.id);
+            const isUploaded = !!docName;
             const isUploading = uploadingId === doc.id;
 
             return (
@@ -129,18 +142,24 @@ const Step5CorpCompliance = () => {
                 />
 
                 <div className="flex flex-col">
-                  <span className="text-sm font-semibold transition-colors" style={isUploaded ? tokens.labelUploaded : tokens.label}>
+                  <span className="text-sm font-semibold transition-colors"
+                    style={isUploaded ? tokens.labelUploaded : tokens.label}>
                     {doc.label}
                   </span>
+                  {/* ✅ Shows filename whether File object or persisted name */}
                   {isUploaded && (
-                    <span className="text-[10px] opacity-50 font-mono italic" style={{ color: 'var(--text-main)' }}>
-                      {formData.documents[doc.id]}
+                    <span className="text-[10px] opacity-50 font-mono italic"
+                      style={{ color: 'var(--text-main)' }}>
+                      {docName}
                     </span>
                   )}
                 </div>
 
                 <div className="flex items-center gap-4">
-                  <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-tighter uppercase" style={isUploaded ? tokens.pillUploaded : tokens.pill}>
+                  <span
+                    className="px-3 py-1 rounded-full text-[10px] font-bold tracking-tighter uppercase"
+                    style={isUploaded ? tokens.pillUploaded : tokens.pill}
+                  >
                     {isUploaded ? 'Verified' : 'Required'}
                   </span>
 
@@ -148,18 +167,14 @@ const Step5CorpCompliance = () => {
                     onClick={() => handleUploadClick(doc.id)}
                     disabled={isUploading || isUploaded}
                     className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium transition-all ${
-                      isUploaded 
-                      ? 'bg-transparent text-[#a855f7] cursor-default' 
-                      : 'bg-[#a855f7] text-white hover:bg-[#9333ea] shadow-lg shadow-purple-500/20 active:scale-95'
+                      isUploaded
+                        ? 'bg-transparent text-[#a855f7] cursor-default'
+                        : 'bg-[#a855f7] text-white hover:bg-[#9333ea] shadow-lg shadow-purple-500/20 active:scale-95'
                     }`}
                   >
-                    {isUploading ? (
-                      <Loader2 size={14} className="animate-spin-slow" />
-                    ) : isUploaded ? (
-                      <CheckCircle2 size={14} />
-                    ) : (
-                      <Upload size={14} />
-                    )}
+                    {isUploading  ? <Loader2 size={14} className="animate-spin-slow" />
+                     : isUploaded ? <CheckCircle2 size={14} />
+                     :              <Upload size={14} />}
                     {isUploading ? 'Syncing...' : isUploaded ? 'Uploaded' : 'Upload PDF'}
                   </button>
                 </div>

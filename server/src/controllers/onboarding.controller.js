@@ -11,15 +11,6 @@ const uploadBase64ToDrive = async (base64String, fileName, mimeType, folder) => 
   return uploadFileToDrive(buffer, fileName, mimeType, folder);
 };
 
-// ─── Submit full onboarding application ───────────────────────────────────────
-// POST /api/onboarding/submit
-// Body: multipart/form-data
-//   - profileImage (file, optional)
-//   - idFront (file, optional)
-//   - idBack (file, optional)
-//   - documents (files array, optional)
-//   - signatureData (base64 string)
-//   - all other text fields as JSON string in "formData" field
 export const submitOnboarding = asyncHandler(async (req, res) => {
 
   // Parse text form data

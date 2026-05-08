@@ -12,24 +12,22 @@ const Step1Account = () => {
   const [error, setError] = useState(""); 
   const { theme } = useTheme();
   const isDark = theme === "dark";
+const handleContinue = () => {
+  const missingFields = [];
+  if (!formData.profileImage__name) missingFields.push("Profile Photo");
+  if (!formData.idFront__name) missingFields.push("Front of ID");
+  if (!formData.idBack__name) missingFields.push("Back of ID");
 
-  const handleContinue = () => {
-    const missingFields = [];
-    if (!formData.profileImage) missingFields.push("Profile Photo");
-    if (!formData.idFront) missingFields.push("Front of ID");
-    if (!formData.idBack) missingFields.push("Back of ID");
+  if (missingFields.length > 0) {
+    setError(`Please upload: ${missingFields.join(", ")}`);
+    setTimeout(() => setError(""), 3000);
+    return;
+  }
 
-    if (missingFields.length > 0) {
-      setError(`Please upload: ${missingFields.join(", ")}`);
-      setTimeout(() => setError(""), 3000);
-      return;
-    }
-
-    setError("");
-    updateForm({ accountType });
-    nextStep();
-  };
-
+  setError("");
+  updateForm({ accountType });
+  nextStep();
+};
   const styles = {
     stepContainer: {
       width: "100%",
