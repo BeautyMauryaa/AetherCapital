@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react"; // Added useEffect here
 import { Image as ImageIcon, CreditCard, CheckCircle2 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useOnboardingStore } from "@/app/store/onboarding.store";
@@ -8,27 +8,40 @@ const FileUpload = ({
   sublabel = null,
   accept = "image/*",
   helperText = null,
-  fieldName, // "profileImage" | "idFront" | "idBack" | "documents"
+  fieldName, // "profileImage" | "idFront" | "idBack"
 }) => {
   const [file, setFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const { updateForm } = useOnboardingStore();
+  
+  // FIX: Destructure formData here so it's available for the useEffect
+  const { updateForm, formData } = useOnboardingStore();
 
-  // Just store the File object in the store — actual upload happens on Submit
+  // This syncs the local state with the global store (useful for 'Back' button)
+  useEffect(() => {
+    if (formData && formData[fieldName] && !file) {
+      setFile(formData[fieldName]);
+    }
+  }, [formData, fieldName, file]);
+
   const handleFile = (f) => {
     if (!f) return;
     setFile(f);
     if (fieldName) {
-      updateForm({ [fieldName]: f }); // store raw File object
+      updateForm({ [fieldName]: f });
     }
   };
 
-  const onDragOver  = (e) => { e.preventDefault(); setIsDragging(true); };
+  const onDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+  
   const onDragLeave = () => setIsDragging(false);
-  const onDrop      = (e) => {
+  
+  const onDrop = (e) => {
     e.preventDefault();
     setIsDragging(false);
     handleFile(e.dataTransfer.files[0]);
@@ -85,7 +98,6 @@ const FileUpload = ({
           </>
         )}
       </div>
-
       {helperText && <p className="helper-text">{helperText}</p>}
     </div>
   );

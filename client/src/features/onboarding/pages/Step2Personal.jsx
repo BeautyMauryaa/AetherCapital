@@ -23,19 +23,37 @@ const COUNTRIES = [
 
 const Step2Personal = () => {
   const { nextStep, updateForm, formData } = useOnboardingStore();
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
-  const [firstName, setFirstName]   = useState(formData.firstName   || "");
-  const [middleName, setMiddleName] = useState(formData.middleName  || "");
-  const [lastName, setLastName]     = useState(formData.lastName    || "");
-  const [day, setDay]               = useState(formData.dobDay      || "");
-  const [month, setMonth]           = useState(formData.dobMonth    || "");
-  const [year, setYear]             = useState(formData.dobYear     || "");
-  const [gender, setGender]         = useState(formData.gender      || "");
-  const [countrySearch, setCountrySearch] = useState(formData.nationality || "");
-  const [showDropdown, setShowDropdown]   = useState(false);
-  const [nationality, setNationality]     = useState(formData.nationality || "");
+  const [firstName, setFirstName]   = useState(formData.firstName   || "");
+  const [middleName, setMiddleName] = useState(formData.middleName  || "");
+  const [lastName, setLastName]     = useState(formData.lastName    || "");
+  const [day, setDay]               = useState(formData.dobDay       || "");
+  const [month, setMonth]           = useState(formData.dobMonth    || "");
+  const [year, setYear]             = useState(formData.dobYear     || "");
+  const [gender, setGender]         = useState(formData.gender       || "");
+  const [countrySearch, setCountrySearch] = useState(formData.nationality || "");
+  const [showDropdown, setShowDropdown]   = useState(false);
+  const [nationality, setNationality]     = useState(formData.nationality || "");
+
+  const isFormValid = 
+    firstName.trim() !== "" && 
+    lastName.trim() !== "" && 
+    day !== "" && 
+    month !== "" && 
+    year !== "" && 
+    nationality !== "";
+
+  const handleContinue = () => {
+    if (!isFormValid) {
+      alert("Please fill in all required fields marked with *");
+      return;
+    }
+    updateForm({ firstName, middleName, lastName, dobDay: day, dobMonth: month, dobYear: year, gender, nationality });
+    nextStep();
+  };
+
 
   const filtered = COUNTRIES.filter((c) =>
     c.toLowerCase().includes(countrySearch.toLowerCase())
@@ -47,10 +65,10 @@ const Step2Personal = () => {
     setShowDropdown(false);
   };
 
-  const handleContinue = () => {
-    updateForm({ firstName, middleName, lastName, dobDay: day, dobMonth: month, dobYear: year, gender, nationality });
-    nextStep();
-  };
+//   const handleContinue = () => {
+//     updateForm({ firstName, middleName, lastName, dobDay: day, dobMonth: month, dobYear: year, gender, nationality });
+//     nextStep();
+//   };
 
   // Reusable class strings
   const inputClass = `w-full h-[52px] px-4 rounded-xl border text-[14px] transition-all duration-200
@@ -198,7 +216,7 @@ const Step2Personal = () => {
         )}
       </div>
 
-      <NavigationButtons onNext={handleContinue} />
+      <NavigationButtons onNext={handleContinue} disabled={!isFormValid} />
     </div>
   );
 };

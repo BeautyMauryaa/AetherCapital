@@ -3,99 +3,132 @@ import { MapPin, ChevronDown, Clock, Plus, Building2, Globe } from 'lucide-react
 import { useOnboardingStore } from "@/app/store/onboarding.store";
 import NavigationButtons from "../../components/common/NavigationButtons";
 
+
 const Step3EnterPriseAdd = () => {
-  const { formData, updateForm, nextStep, prevStep } = useOnboardingStore();
-  const [showCountryDrop, setShowCountryDrop] = useState(false);
+  const { formData, updateForm, nextStep, prevStep } = useOnboardingStore();
+  const [showCountryDrop, setShowCountryDrop] = useState(false);
+  
+  // --- VALIDATION STATE ---
+  const [errors, setErrors] = useState({});
 
-  const DAYS = [
-    { id: 'mon', label: 'MON' }, { id: 'tue', label: 'TUE' },
-    { id: 'wed', label: 'WED' }, { id: 'thu', label: 'THU' },
-    { id: 'fri', label: 'FRI' }, { id: 'sat', label: 'SAT' },
-    { id: 'sun', label: 'SUN' }
-  ];
+  const DAYS = [
+    { id: 'mon', label: 'MON' }, { id: 'tue', label: 'TUE' },
+    { id: 'wed', label: 'WED' }, { id: 'thu', label: 'THU' },
+    { id: 'fri', label: 'FRI' }, { id: 'sat', label: 'SAT' },
+    { id: 'sun', label: 'SUN' }
+  ];
+const hours = formData.operatingHours || DAYS.reduce((acc, day) => ({
+    ...acc,
+    [day.id]: { active: !['sat', 'sun'].includes(day.id), open: "09:00 AM", close: "05:00 PM" }
+  }), {});
 
-  const hours = formData.operatingHours || DAYS.reduce((acc, day) => ({
-    ...acc,
-    [day.id]: { active: !['sat', 'sun'].includes(day.id), open: "09:00 AM", close: "05:00 PM" }
-  }), {});
+  const handleFieldChange = (name, value) => {
+    // Clear error when user interacts with the field
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: null }));
+    }
+    updateForm({ [name]: value });
+  };
 
-  const handleFieldChange = (name, value) => updateForm({ [name]: value });
+  const toggleDay = (dayId) => {
+    updateForm({
+      operatingHours: { ...hours, [dayId]: { ...hours[dayId], active: !hours[dayId].active } }
+    });
+  };
 
-  const toggleDay = (dayId) => {
-    updateForm({
-      operatingHours: { ...hours, [dayId]: { ...hours[dayId], active: !hours[dayId].active } }
-    });
-  };
+  // --- VALIDATION LOGIC ---
+  const handleValidateAndNext = () => {
+    const requiredFields = ['country', 'address1', 'city', 'state', 'zip'];
+    const newErrors = {};
 
-  const hasAddress = formData.address1?.trim();
+    requiredFields.forEach(field => {
+      if (!formData[field]?.trim()) {
+        newErrors[field] = 'Required';
+      }
+    });
 
-  const inputStyle = {
-    backgroundColor: 'var(--card-bg)',
-    border: '1px solid var(--border-color)',
-    color: 'var(--text-main)',
-  };
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      // Optional: Smooth scroll back to the first error
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
 
-  const labelStyle = {
-    color: 'var(--text-main)',
-    opacity: 0.5,
-  };
+    nextStep();
+  };
 
-  return (
-    <div className="max-w-4xl pb-24 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      {/* Header */}
-      <div className="mb-10 text-left">
-        <p className="flex items-center gap-2 font-mono text-[10px] tracking-[0.3em] text-[#a855f7] uppercase mb-4 before:content-[''] before:w-8 before:h-[1px] before:bg-[#a855f7]">
-          STEP 03 / 06
-        </p>
-        <h1 className="text-[48px] font-bold leading-tight tracking-tight mb-4"
-          style={{ color: 'var(--text-main)' }}>
-          Address & <span className="text-[#a855f7]">location.</span>
-        </h1>
-        <p className="text-[15px] max-w-lg" style={{ color: 'var(--text-main)', opacity: 0.4 }}>
-          Where you operate, where to mail you, and the hours we can reach you.
-        </p>
-      </div>
+  const hasAddress = formData.address1?.trim();
 
-      <div className="space-y-12">
-        {/* ── PRIMARY ADDRESS ── */}
-        <section className="space-y-8">
-          <div className="flex items-center gap-4 mb-2">
-            <h3 className="text-[11px] font-bold tracking-[0.25em] uppercase whitespace-nowrap flex items-center gap-2"
-              style={{ color: 'var(--text-main)', opacity: 0.4 }}>
-              <Building2 size={14} className="text-[#a855f7]" />
-              Primary Address
-            </h3>
-            <div className="w-full h-[1px]" style={{ backgroundColor: 'var(--border-color)' }} />
-          </div>
+  // Dynamic input style based on error state
+  const getInputStyle = (fieldName) => ({
+    backgroundColor: 'var(--card-bg)',
+    border: errors[fieldName] 
+      ? '1px solid #ef4444' 
+      : '1px solid var(--border-color)',
+    color: 'var(--text-main)',
+    boxShadow: errors[fieldName] ? '0 0 0 1px rgba(239, 68, 68, 0.2)' : 'none'
+  });
 
-          <div className="grid grid-cols-1 gap-6">
-            {/* Country */}
-            <div className="space-y-3">
-              <label className="text-[11px] font-medium uppercase tracking-widest ml-1" style={labelStyle}>
-                Country *
-              </label>
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setShowCountryDrop(!showCountryDrop)}
-                  className="w-full h-[56px] px-5 rounded-2xl flex items-center justify-between text-sm hover:opacity-80 transition-all"
-                  style={inputStyle}
-                >
-                  <span className="flex items-center gap-3">
-                    <div
-                      className="w-6 h-4 rounded-sm overflow-hidden flex items-center justify-center"
-                      style={{ backgroundColor: 'var(--border-color)' }}
-                    >
-                      <Globe size={12} style={{ color: 'var(--text-main)', opacity: 0.4 }} />
-                    </div>
-                    <span style={{ color: 'var(--text-main)' }}>{formData.country || "United States"}</span>
-                  </span>
-                  <ChevronDown
-                    size={18}
-                    className={`transition-transform ${showCountryDrop ? 'rotate-180' : ''}`}
-                    style={{ color: 'var(--text-main)', opacity: 0.3 }}
-                  />
-                </button>
+  const labelStyle = {
+    color: 'var(--text-main)',
+    opacity: 0.5,
+  };
+
+return (
+    <div className="max-w-4xl pb-24 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* Header */}
+      <div className="mb-10 text-left">
+        <p className="flex items-center gap-2 font-mono text-[10px] tracking-[0.3em] text-[#a855f7] uppercase mb-4 before:content-[''] before:w-8 before:h-[1px] before:bg-[#a855f7]">
+          STEP 03 / 06
+        </p>
+        <h1 className="text-[48px] font-bold leading-tight tracking-tight mb-4"
+          style={{ color: 'var(--text-main)' }}>
+          Address & <span className="text-[#a855f7]">location.</span>
+        </h1>
+        <p className="text-[15px] max-w-lg" style={{ color: 'var(--text-main)', opacity: 0.4 }}>
+          Where you operate, where to mail you, and the hours we can reach you.
+        </p>
+      </div>
+
+      <div className="space-y-12">
+        {/* ── PRIMARY ADDRESS ── */}
+        <section className="space-y-8">
+          <div className="flex items-center gap-4 mb-2">
+            <h3 className="text-[11px] font-bold tracking-[0.25em] uppercase whitespace-nowrap flex items-center gap-2"
+              style={{ color: 'var(--text-main)', opacity: 0.4 }}>
+              <Building2 size={14} className="text-[#a855f7]" />
+              Primary Address
+            </h3>
+            <div className="w-full h-[1px]" style={{ backgroundColor: 'var(--border-color)' }} />
+          </div>
+<div className="grid grid-cols-1 gap-6">
+            {/* Country */}
+            <div className="space-y-3">
+              <label className="text-[11px] font-medium uppercase tracking-widest ml-1" style={labelStyle}>
+                Country *
+              </label>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowCountryDrop(!showCountryDrop)}
+                  className="w-full h-[56px] px-5 rounded-2xl flex items-center justify-between text-sm hover:opacity-80 transition-all"
+                  style={getInputStyle("country")}
+                >
+                  <span className="flex items-center gap-3">
+                    <div
+                      className="w-6 h-4 rounded-sm overflow-hidden flex items-center justify-center"
+                      style={{ backgroundColor: 'var(--border-color)' }}
+                    >
+                      <Globe size={12} style={{ color: 'var(--text-main)', opacity: 0.4 }} />
+                    </div>
+                    <span style={{ color: 'var(--text-main)' }}>{formData.country || "Select Country"}</span>
+                  </span>
+                  <ChevronDown
+                    size={18}
+                    className={`transition-transform ${showCountryDrop ? 'rotate-180' : ''}`}
+                    style={{ color: 'var(--text-main)', opacity: 0.3 }}
+                  />
+                </button>
                 {showCountryDrop && (
                   <div
                     className="absolute z-50 top-full mt-1 w-full rounded-xl overflow-hidden shadow-2xl max-h-64 overflow-y-auto"
@@ -123,55 +156,58 @@ const Step3EnterPriseAdd = () => {
 
             {/* Address Line 1 */}
             <div className="space-y-3">
-              <label className="text-[11px] font-medium uppercase tracking-widest ml-1" style={labelStyle}>
-                Address Line 1 *
-              </label>
-              <input
-                placeholder="Street number and street name"
-                value={formData.address1 || ""}
-                onChange={(e) => handleFieldChange("address1", e.target.value)}
-                className="w-full h-[56px] px-5 rounded-2xl focus:outline-none focus:ring-1 focus:ring-purple-500/50 transition-all"
-                style={inputStyle}
-              />
-            </div>
+              <label className="text-[11px] font-medium uppercase tracking-widest ml-1" style={labelStyle}>
+                Address Line 1 *
+              </label>
+              <input
+                placeholder="Street number and street name"
+                value={formData.address1 || ""}
+                onChange={(e) => handleFieldChange("address1", e.target.value)}
+                className="w-full h-[56px] px-5 rounded-2xl focus:outline-none focus:ring-1 focus:ring-purple-500/50 transition-all"
+                style={getInputStyle("address1")}
+              />
+              {errors.address1 && <span className="text-[10px] text-red-500 ml-1 font-bold tracking-wider">! FIELD REQUIRED</span>}
+            </div>
 
             {/* Address Line 2 */}
-            <div className="space-y-3">
-              <label className="text-[11px] font-medium uppercase tracking-widest ml-1" style={labelStyle}>
-                Address Line 2
-              </label>
-              <input
-                placeholder="Apt 4B / Suite / Floor"
-                value={formData.address2 || ""}
-                onChange={(e) => handleFieldChange("address2", e.target.value)}
-                className="w-full h-[56px] px-5 rounded-2xl focus:outline-none focus:ring-1 focus:ring-purple-500/50 transition-all"
-                style={inputStyle}
-              />
-            </div>
+           <div className="space-y-3">
+              <label className="text-[11px] font-medium uppercase tracking-widest ml-1" style={labelStyle}>
+                Address Line 1 *
+              </label>
+              <input
+                placeholder="Street number and street name"
+                value={formData.address1 || ""}
+                onChange={(e) => handleFieldChange("address1", e.target.value)}
+                className="w-full h-[56px] px-5 rounded-2xl focus:outline-none focus:ring-1 focus:ring-purple-500/50 transition-all"
+                style={getInputStyle("address1")}
+              />
+              {errors.address1 && <span className="text-[10px] text-red-500 ml-1 font-bold tracking-wider">! FIELD REQUIRED</span>}
+            </div>
 
             {/* City / State / Zip */}
-            <div className="grid grid-cols-3 gap-6">
-              {[
-                { label: "City *", field: "city", placeholder: "City" },
-                { label: "State *", field: "state", placeholder: "State" },
-                { label: "Zip *", field: "zip", placeholder: "10001" },
-              ].map(({ label, field, placeholder }) => (
-                <div key={field} className="space-y-3">
-                  <label className="text-[11px] font-medium uppercase tracking-widest" style={labelStyle}>
-                    {label}
-                  </label>
-                  <input
-                    placeholder={placeholder}
-                    value={formData[field] || ""}
-                    onChange={(e) => handleFieldChange(field, e.target.value)}
-                    className="w-full h-[56px] px-5 rounded-2xl focus:outline-none focus:ring-1 focus:ring-purple-500/50 transition-all"
-                    style={inputStyle}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+          <div className="grid grid-cols-3 gap-6">
+              {[
+                { label: "City *", field: "city", placeholder: "City" },
+                { label: "State *", field: "state", placeholder: "State" },
+                { label: "Zip *", field: "zip", placeholder: "10001" },
+              ].map(({ label, field, placeholder }) => (
+                <div key={field} className="space-y-3">
+                  <label className="text-[11px] font-medium uppercase tracking-widest" style={labelStyle}>
+                    {label}
+                  </label>
+                  <input
+                    placeholder={placeholder}
+                    value={formData[field] || ""}
+                    onChange={(e) => handleFieldChange(field, e.target.value)}
+                    className="w-full h-[56px] px-5 rounded-2xl focus:outline-none focus:ring-1 focus:ring-purple-500/50 transition-all"
+                    style={getInputStyle(field)}
+                  />
+                  {errors[field] && <span className="text-[10px] text-red-500 ml-1 font-bold tracking-wider">! REQUIRED</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
 
         {/* ── ADDRESS PREVIEW ── */}
         <div
@@ -234,16 +270,18 @@ const Step3EnterPriseAdd = () => {
           </label>
 
           <div className="space-y-3 pt-4">
-            <label className="text-[11px] font-medium uppercase tracking-widest ml-1" style={labelStyle}>
-              Time Zone
-            </label>
-            <div className="relative">
-              <select
-                className="w-full h-[56px] px-5 rounded-2xl text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-purple-500/50 transition-all"
-                style={{ ...inputStyle, colorScheme: 'var(--color-scheme, light)' }}
-                value={formData.timezone || "America/New_York"}
-                onChange={(e) => handleFieldChange("timezone", e.target.value)}
-              >
+  <label className="text-[11px] font-medium uppercase tracking-widest ml-1" style={labelStyle}>
+    Time Zone
+  </label>
+  <div className="relative">
+    <select
+      className="w-full h-[56px] px-5 rounded-2xl text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-purple-500/50 transition-all"
+      // CHANGE THIS LINE: 
+      style={{ ...getInputStyle('timezone'), colorScheme: 'var(--color-scheme, light)' }}
+      value={formData.timezone || "America/New_York"}
+      onChange={(e) => handleFieldChange("timezone", e.target.value)}
+    >
+
                 <option value="America/New_York" style={{ backgroundColor: 'var(--card-bg)' }}>America/New_York</option>
                 <option value="Europe/London" style={{ backgroundColor: 'var(--card-bg)' }}>Europe/London</option>
                 <option value="Asia/Tokyo" style={{ backgroundColor: 'var(--card-bg)' }}>Asia/Tokyo</option>
@@ -251,11 +289,11 @@ const Step3EnterPriseAdd = () => {
                 <option value="Asia/Dubai" style={{ backgroundColor: 'var(--card-bg)' }}>Asia/Dubai</option>
                 <option value="Asia/Singapore" style={{ backgroundColor: 'var(--card-bg)' }}>Asia/Singapore</option>
               </select>
-              <Clock
-                size={16}
-                className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none"
-                style={{ color: 'var(--text-main)', opacity: 0.2 }}
-              />
+             <Clock
+      size={16}
+      className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none"
+      style={{ color: 'var(--text-main)', opacity: 0.2 }}
+    />
             </div>
             <p className="text-[11px] italic ml-1" style={{ color: 'var(--text-main)', opacity: 0.2 }}>
               Auto-detected from country — editable
@@ -368,9 +406,9 @@ const Step3EnterPriseAdd = () => {
       </div>
 
       <div className="mt-16">
-        <NavigationButtons onNext={nextStep} onBack={prevStep} />
-      </div>
-    </div>
+        <NavigationButtons onNext={handleValidateAndNext} onBack={prevStep} />
+      </div>
+    </div>
   );
 };
 

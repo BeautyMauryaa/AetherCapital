@@ -17,7 +17,7 @@
     "react-dom": "^18.3.1",
     "react-signature-canvas": "^1.0.7",
     "signature_pad": "^4.0.0",
-    "zustand": "^5.0.12"
+    "zustand": "^5.0.13"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
