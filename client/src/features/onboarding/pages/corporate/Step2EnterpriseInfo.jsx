@@ -145,6 +145,124 @@ const Step2EnterpriseInfo = () => {
           {errors.industry && <p className="text-[10px] text-red-500 font-medium">{errors.industry}</p>}
         </div>
 
+        {/* NUMBER OF EMPLOYEES */}
+<div className="space-y-2">
+  <label className="text-[11px] font-medium uppercase tracking-wider"
+    style={{ color: 'var(--text-main)', opacity: 0.5 }}>
+    Number of Employees
+  </label>
+  <div className="relative px-2">
+    <input
+      type="range"
+      min={0} max={3} step={1}
+      value={["1-10","11-50","51-200","200+"].indexOf(formData.employeeRange || "11-50") === -1 ? 1 : ["1-10","11-50","51-200","200+"].indexOf(formData.employeeRange || "11-50")}
+      onChange={(e) => handleFieldChange("employeeRange", ["1-10","11-50","51-200","200+"][e.target.value])}
+      className="w-full accent-purple-500 cursor-pointer"
+    />
+    <div className="flex justify-between mt-1">
+      {["1-10","11-50","51-200","200+"].map((label, i) => (
+        <span key={i}
+          className="text-[11px] font-medium"
+          style={{
+            color: formData.employeeRange === label || (!formData.employeeRange && label === "11-50")
+              ? "#a855f7" : "var(--text-main)",
+            opacity: formData.employeeRange === label || (!formData.employeeRange && label === "11-50") ? 1 : 0.35
+          }}>
+          {label}
+        </span>
+      ))}
+    </div>
+  </div>
+</div>
+
+{/* ENTERPRISE DETAILS */}
+<div className="space-y-4">
+  <label className="text-[11px] font-bold uppercase tracking-wider"
+    style={{ color: 'var(--text-main)', opacity: 0.5 }}>
+    Enterprise Details
+  </label>
+
+  <div className="grid grid-cols-2 gap-4">
+    {/* Subsidiary Count */}
+    <div className="space-y-2">
+      <label className="text-[11px] font-medium uppercase tracking-wider"
+        style={{ color: 'var(--text-main)', opacity: 0.5 }}>
+        Subsidiary Count
+      </label>
+      <div className="flex items-center h-[52px] rounded-xl overflow-hidden"
+        style={{ border: '1px solid var(--border-color)', backgroundColor: 'var(--card-bg)' }}>
+        <button
+          type="button"
+          onClick={() => handleFieldChange("subsidiaryCount", Math.max(0, (formData.subsidiaryCount || 0) - 1))}
+          className="w-12 h-full flex items-center justify-center text-xl hover:bg-purple-500/10 transition-colors"
+          style={{ color: 'var(--text-main)', opacity: 0.5 }}>
+          −
+        </button>
+        <span className="flex-1 text-center text-[15px] font-semibold"
+          style={{ color: 'var(--text-main)' }}>
+          {formData.subsidiaryCount || 0}
+        </span>
+        <button
+          type="button"
+          onClick={() => handleFieldChange("subsidiaryCount", (formData.subsidiaryCount || 0) + 1)}
+          className="w-12 h-full flex items-center justify-center text-xl hover:bg-purple-500/10 transition-colors"
+          style={{ color: 'var(--text-main)', opacity: 0.5 }}>
+          +
+        </button>
+      </div>
+    </div>
+
+    {/* Parent Company */}
+    <div className="space-y-2">
+      <label className="text-[11px] font-medium uppercase tracking-wider"
+        style={{ color: 'var(--text-main)', opacity: 0.5 }}>
+        Parent Company
+      </label>
+      <input
+        type="text"
+        placeholder="Parent or holding company"
+        value={formData.parentCompany || ""}
+        onChange={(e) => handleFieldChange("parentCompany", e.target.value)}
+        className="w-full h-[52px] px-4 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500/50 transition-all"
+        style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
+      />
+    </div>
+  </div>
+
+  {/* Listed Company Toggle */}
+  <div className="flex items-center justify-between p-5 rounded-xl"
+    style={{ border: '1px solid var(--border-color)', backgroundColor: 'var(--card-bg)' }}>
+    <div>
+      <p className="text-[14px] font-medium" style={{ color: 'var(--text-main)' }}>
+        Listed company?
+      </p>
+      <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-main)', opacity: 0.4 }}>
+        Toggle on to enter ticker symbol
+      </p>
+    </div>
+    <button
+      type="button"
+      onClick={() => handleFieldChange("isListed", !formData.isListed)}
+      className={`relative w-12 h-6 rounded-full transition-all duration-300
+        ${formData.isListed ? 'bg-purple-500' : 'bg-gray-400/30'}`}>
+      <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-all duration-300
+        ${formData.isListed ? 'translate-x-6' : 'translate-x-0'}`} />
+    </button>
+  </div>
+
+  {/* Ticker Symbol — shows only when listed */}
+  {formData.isListed && (
+    <input
+      type="text"
+      placeholder="Ticker symbol (e.g. AAPL)"
+      value={formData.tickerSymbol || ""}
+      onChange={(e) => handleFieldChange("tickerSymbol", e.target.value.toUpperCase())}
+      className="w-full h-[52px] px-4 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500/50 transition-all animate-in fade-in duration-300"
+      style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
+    />
+  )}
+</div>
+
         {/* Navigation */}
         <div className="mt-16">
           <NavigationButtons onNext={handleContinue} onBack={prevStep} />
