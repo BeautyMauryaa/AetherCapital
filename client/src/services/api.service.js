@@ -11,6 +11,7 @@ const request = async (endpoint, options = {}) => {
   const url = `${BASE_URL}${endpoint}`;
   const response = await fetch(url, {
     ...options,
+    
     headers: {
       // Don't set Content-Type for FormData — browser sets it with boundary
       ...(options.body instanceof FormData
