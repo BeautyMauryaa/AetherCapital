@@ -76,8 +76,13 @@ const SectionLabel = ({ children, required }) => (
 );
 
 const Step3Address = () => {
-  const { nextStep, updateForm, formData } = useOnboardingStore();
-
+  // const { nextStep, updateForm, formData } = useOnboardingStore();
+const {
+  nextStep,
+  updateForm,
+  formData,
+  currentStep,
+} = useOnboardingStore();
   const [country, setCountry] = useState(formData.country || "US");
   const [address1, setAddress1] = useState(formData.address1 || "");
   const [address2, setAddress2] = useState(formData.address2 || "");
@@ -105,15 +110,38 @@ const Step3Address = () => {
 
   const hasAddress = address1.trim();
   const previewLine2 = [city, state, zip].filter(Boolean).join(", ");
+const ZIP_PATTERNS = {
+  US: /^\d{5}(-\d{4})?$/,
+  IN: /^[1-9][0-9]{5}$/,
+  CA: /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/,
+  GB: /^[A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2}$/i,
+};
+ const validate = () => {
+  const e = {};
 
-  const validate = () => {
-    const e = {};
-    if (!address1.trim()) e.address1 = true;
-    if (!city.trim()) e.city = true;
-    if (!zip.trim()) e.zip = true;
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
+  if (!address1.trim()) {
+    e.address1 = "Address is required";
+  }
+
+  if (!city.trim()) {
+    e.city = "City is required";
+  }
+
+  if (!zip.trim()) {
+    e.zip = "ZIP / Postal code is required";
+  } else {
+    const pattern = ZIP_PATTERNS[country];
+
+    if (pattern && !pattern.test(zip.trim())) {
+      e.zip = "Invalid ZIP / Postal code";
+    }
+  }
+
+  setErrors(e);
+
+  return Object.keys(e).length === 0;
+};
+
 
   const handleContinue = () => {
     if (!validate()) return;
@@ -202,31 +230,66 @@ const Step3Address = () => {
 
       {/* ── CITY / STATE / ZIP ── */}
       <div className="grid grid-cols-3 gap-3 mb-6">
-        <div>
-          <SectionLabel required>City</SectionLabel>
-          <Field
-            placeholder=""
-            value={city}
-            onChange={(v) => { setCity(v); setErrors((e) => ({ ...e, city: false })); }}
-            hasError={errors.city}
-          />
-          {errors.city && <p className="text-[11px] text-red-400 mt-1.5">Required</p>}
-        </div>
-        <div>
-          <SectionLabel>State</SectionLabel>
-          <Field placeholder="" value={state} onChange={setState} />
-        </div>
-        <div>
-          <SectionLabel required>ZIP</SectionLabel>
-          <Field
-            placeholder="10001"
-            value={zip}
-            onChange={(v) => { setZip(v); setErrors((e) => ({ ...e, zip: false })); }}
-            hasError={errors.zip}
-          />
-          {errors.zip && <p className="text-[11px] text-red-400 mt-1.5">Required</p>}
-        </div>
-      </div>
+  <div>
+    <SectionLabel required>City</SectionLabel>
+
+    <Field
+      placeholder=""
+      value={city}
+      onChange={(v) => {
+        setCity(v);
+
+        setErrors((e) => ({
+          ...e,
+          city: "",
+        }));
+      }}
+      hasError={!!errors.city}
+    />
+
+    {errors.city && (
+      <p className="text-[11px] text-red-400 mt-1.5">
+        {errors.city}
+      </p>
+    )}
+  </div>
+
+  <div>
+    <SectionLabel>State</SectionLabel>
+
+    <Field
+      placeholder=""
+      value={state}
+      onChange={setState}
+    />
+  </div>
+
+  <div>
+    <SectionLabel required>ZIP</SectionLabel>
+
+    <Field
+      placeholder="10001"
+      value={zip}
+      onChange={(v) => {
+        const cleaned = v.replace(/[^a-zA-Z0-9 -]/g, "");
+
+        setZip(cleaned);
+
+        setErrors((e) => ({
+          ...e,
+          zip: "",
+        }));
+      }}
+      hasError={!!errors.zip}
+    />
+
+    {errors.zip && (
+      <p className="text-[11px] text-red-400 mt-1.5">
+        {errors.zip}
+      </p>
+    )}
+  </div>
+</div>
 
       {/* ── MAP PREVIEW ── */}
       <div className="flex rounded-2xl overflow-hidden border border-border mb-6 min-h-[160px]">
