@@ -60,18 +60,15 @@ const Step6Review = () => {
   return "None uploaded";
 };
   // ── Profile photo preview from fileStore ──────────────────────────────────
-const profileFile = fileStore.get("profileImage");
+const profileFile       = fileStore.get("profileImage");
+const submissionResult  = useOnboardingStore((s) => s.submissionResult);
 
-const profilePreviewUrl = (() => {
-  // 1. fileStore mein hai (fresh session)
-  if (profileFile instanceof File) return URL.createObjectURL(profileFile);
-  // 2. formData mein base64 preview hai
-  if (formData.profileImage__preview) return formData.profileImage__preview;
-  // 3. submissionResult mein b64 hai (after submit)
-  const b64 = useOnboardingStore.getState().submissionResult?.profileImageB64;
-  if (b64) return b64;
-  return null;
-})();
+const profilePreviewUrl =
+  profileFile instanceof File
+    ? URL.createObjectURL(profileFile)
+    : formData.profileImage__preview        // base64 from FileUpload ✓
+    || submissionResult?.profileImageB64    // after submission ✓
+    || null;
 
   const handleSubmit = () => {
     if (!canSubmit || isSubmitting) return;
