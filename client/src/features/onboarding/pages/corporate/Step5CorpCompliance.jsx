@@ -1,191 +1,146 @@
-import React, { useRef, useState, useEffect } from 'react';
+// src/features/onboarding/pages/corporate/Step5CorpCompliance.jsx
+//
+// FIXES:
+// 1. handleContinue now checks the correct shape — { name, driveUrl, fileId }
+//    objects stored by the updated DocumentChecklist, not File instances or __names.
+// 2. Validation error uses inline UI state instead of alert().
+// 3. Shows exactly which document labels are missing, not just a count.
+
+import React, { useState, useEffect } from "react";
 import { useOnboardingStore } from "@/app/store/onboarding.store";
 import NavigationButtons from "../../components/common/NavigationButtons";
-import { Upload, CheckCircle2, Loader2 } from "lucide-react";
 import RiskScore from "../../components/risk/RiskScore";
 import Questionnaire from "../../components/questionnaire/Questionnaire";
+import DocumentChecklist from "../../components/documents/DocumentChecklist";
+import { AlertCircle } from "lucide-react";
+
+// Doc ID → human-readable label (matches DocumentChecklist DOCS array)
+const DOC_LABELS = {
+  incorp_cert: "Certificate of Incorporation",
+  tax_id: "Tax Registration",
+  proof_addr: "Proof of Address",
+  ubo_registry: "Beneficial Owner Declaration",
+};
+
+const REQUIRED_DOCS = Object.keys(DOC_LABELS);
 
 function useIsDark() {
-  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
+  const [isDark, setIsDark] = useState(
+    () =>
+      typeof document !== "undefined" &&
+      document.documentElement.classList.contains("dark"),
+  );
   useEffect(() => {
     const el = document.documentElement;
-    const observer = new MutationObserver(() => setIsDark(el.classList.contains('dark')));
-    observer.observe(el, { attributes: true, attributeFilter: ['class'] });
+    const observer = new MutationObserver(() => {
+      setIsDark(el.classList.contains("dark"));
+    });
+    observer.observe(el, { attributes: true, attributeFilter: ["class"] });
     return () => observer.disconnect();
   }, []);
   return isDark;
 }
 
-const requiredDocs = [
-  { id: 'incorp_cert',  label: 'Certificate of Incorporation' },
-  { id: 'tax_id',       label: 'Tax Registration'             },
-  { id: 'proof_addr',   label: 'Proof of Address'             },
-  { id: 'ubo_registry', label: 'Beneficial Owner Declaration' },
-];
-
 const Step5CorpCompliance = () => {
-  const { formData, nextStep, prevStep, updateForm } = useOnboardingStore();
-  const fileInputRefs = useRef({});
-  const [uploadingId, setUploadingId] = useState(null);
+  const { formData, nextStep, prevStep } = useOnboardingStore();
   const isDark = useIsDark();
+  const [docError, setDocError] = useState(null);
 
-  const handleUploadClick = (docId) => fileInputRefs.current[docId]?.click();
-
-  const handleFileChange = (event, docId) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    setUploadingId(docId);
-    setTimeout(() => {
-      // ✅ Store the actual File object, NOT file.name
-      updateForm({
-        documents: {
-          ...(formData.documents || {}),
-          [docId]: file,  // <-- File object goes here
-        },
-      });
-      setUploadingId(null);
-    }, 1200);
+  // FIX 1: check the shape that DocumentChecklist actually writes:
+  //   formData.documents[id] = { name, driveUrl, fileId, ... }
+  //   A doc is "uploaded" only when driveUrl exists (real API call succeeded).
+  const isDocUploaded = (id) => {
+    const doc = formData.documents?.[id];
+    // New shape from fixed DocumentChecklist — has driveUrl after real upload
+    if (doc?.driveUrl) return true;
+    // Legacy fallback: old shape stored name string directly
+    if (typeof doc === "string" && doc.length > 0) return true;
+    // Legacy fallback: __names written by old store logic
+    if (formData.documents__names?.[id]) return true;
+    return false;
   };
 
-  // ── Helper: get display name for a doc slot ──────────────────────────────
-  // After our store fix, documents[docId] is a File object.
-  // We also check documents__names[docId] for the persisted metadata name.
-  const getDocName = (docId) => {
-    const entry = formData.documents?.[docId];
-    if (entry instanceof File) return entry.name;
-    if (typeof entry === 'string') return entry; // fallback
-    // Check persisted metadata written by new updateForm
-    return formData.documents__names?.[docId] ?? null;
-  };
+  const handleContinue = () => {
+    const missing = REQUIRED_DOCS.filter((id) => !isDocUploaded(id));
+    console.log("FORM DATA DOCS:", formData.documents);
 
-  const handleNext = () => {
-    const uploaded = requiredDocs.filter(
-      (doc) => !!getDocName(doc.id)
-    );
-    if (uploaded.length < requiredDocs.length) {
-      alert(`Please upload all required compliance documents to continue.`);
+    if (missing.length > 0) {
+      // FIX 2+3: inline error state, no alert(), shows specific doc names
+      setDocError(missing.map((id) => DOC_LABELS[id]));
+      // Scroll to the document checklist so the user sees the error
+      document
+        .getElementById("doc-checklist")
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
+
+    setDocError(null);
     nextStep();
   };
 
-  const tokens = isDark
-    ? {
-        row:         { background: 'rgba(30, 30, 46, 0.5)', border: '1px solid rgba(255,255,255,0.05)' },
-        rowUploaded: { background: 'rgba(168, 85, 247, 0.05)', border: '1px solid rgba(168, 85, 247, 0.3)' },
-        label:         { color: '#94a3b8' },
-        labelUploaded: { color: '#e2e8f0' },
-        pill:         { background: 'rgba(255,255,255,0.03)', color: '#64748b' },
-        pillUploaded: { background: 'rgba(168, 85, 247, 0.2)', color: '#a855f7' },
-      }
-    : {
-        row:         { background: '#ffffff', border: '1px solid #e2e8f0' },
-        rowUploaded: { background: '#f5f3ff', border: '1px solid #ddd6fe' },
-        label:         { color: '#64748b' },
-        labelUploaded: { color: '#581c87' },
-        pill:         { background: '#f1f5f9', color: '#94a3b8' },
-        pillUploaded: { background: '#ede9fe', color: '#7c3aed' },
-      };
-
   return (
-    <div className="max-w-3xl pb-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <style>{`
-        @keyframes custom-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .animate-spin-slow { animation: custom-spin 1s linear infinite; }
-      `}</style>
-
+    <div className="max-w-3xl pb-20 transition-colors duration-300">
       {/* Header */}
       <div className="mb-10">
-        <p className="flex items-center gap-2 font-mono text-[10px] tracking-[0.3em] text-[#a855f7] uppercase mb-4 before:content-[''] before:w-8 before:h-[1px] before:bg-[#a855f7]">
+        <p className="flex items-center gap-2 font-mono text-[10px] tracking-[0.2em] text-purple-600 dark:text-purple-400 uppercase mb-3 before:content-[''] before:w-6 before:h-[1px] before:bg-purple-600 dark:before:bg-purple-400">
           STEP 05 / 06
         </p>
-        <h1 className="text-[40px] font-bold leading-tight tracking-tight mb-4" style={{ color: 'var(--text-main)' }}>
-          Compliance & <span className="text-[#a855f7]">risk.</span>
+        <h1 className="text-3xl font-semibold text-slate-900 dark:text-white mb-3">
+          Compliance &amp;{" "}
+          <span className="text-purple-600 dark:text-purple-400">risk</span>.
         </h1>
-        <p className="text-[15px] opacity-50" style={{ color: 'var(--text-main)' }}>
-          Regulatory verification and entity documentation.
+        <p className="text-[14px] text-slate-500 dark:text-slate-400">
+          Upload entity documents and complete the regulatory assessment.
         </p>
       </div>
 
-      {/* Risk & Questionnaire */}
-      <div className="space-y-12 mb-16">
+      {/* Risk Score + Questionnaire */}
+      <div className="space-y-10 mb-12">
         <RiskScore />
         <Questionnaire />
       </div>
 
-      {/* Document Upload Rows */}
-      <div className="mb-6">
-        <h3 className="text-[11px] font-bold tracking-[0.25em] uppercase opacity-40 mb-6"
-          style={{ color: 'var(--text-main)' }}>
-          Required Documentation
-        </h3>
+      {/* Document Checklist */}
+      <div
+        id="doc-checklist"
+        className="mb-5 border-t border-slate-200 dark:border-white/5 pt-10"
+      >
+        <p className="text-[11px] font-bold tracking-[0.25em] text-slate-400 dark:text-slate-500 uppercase mb-6">
+          Document Checklist
+        </p>
 
-        <div className="flex flex-col gap-3">
-          {requiredDocs.map((doc) => {
-            const docName    = getDocName(doc.id);
-            const isUploaded = !!docName;
-            const isUploading = uploadingId === doc.id;
+        <DocumentChecklist />
 
-            return (
-              <div
-                key={doc.id}
-                className="group flex items-center justify-between px-6 h-[72px] rounded-2xl transition-all duration-300"
-                style={isUploaded ? tokens.rowUploaded : tokens.row}
-              >
-                <input
-                  type="file"
-                  className="hidden"
-                  ref={(el) => (fileInputRefs.current[doc.id] = el)}
-                  onChange={(e) => handleFileChange(e, doc.id)}
-                  accept=".pdf,.jpg,.jpeg,.png"
-                />
-
-                <div className="flex flex-col">
-                  <span className="text-sm font-semibold transition-colors"
-                    style={isUploaded ? tokens.labelUploaded : tokens.label}>
-                    {doc.label}
-                  </span>
-                  {/* ✅ Shows filename whether File object or persisted name */}
-                  {isUploaded && (
-                    <span className="text-[10px] opacity-50 font-mono italic"
-                      style={{ color: 'var(--text-main)' }}>
-                      {docName}
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-4">
-                  <span
-                    className="px-3 py-1 rounded-full text-[10px] font-bold tracking-tighter uppercase"
-                    style={isUploaded ? tokens.pillUploaded : tokens.pill}
+        {/* FIX 2+3: Inline validation error — no alert() */}
+        {docError && (
+          <div className="mt-4 flex items-start gap-3 px-4 py-3.5 rounded-xl border border-orange-500/30 bg-orange-500/5">
+            <AlertCircle
+              size={15}
+              className="text-orange-400 flex-shrink-0 mt-0.5"
+            />
+            <div>
+              <p className="text-[12px] font-semibold text-orange-400 mb-1">
+                Please upload all required documents before continuing.
+              </p>
+              <ul className="space-y-0.5">
+                {docError.map((label) => (
+                  <li
+                    key={label}
+                    className="text-[11px] text-orange-400/80 flex items-center gap-1.5"
                   >
-                    {isUploaded ? 'Verified' : 'Required'}
-                  </span>
-
-                  <button
-                    onClick={() => handleUploadClick(doc.id)}
-                    disabled={isUploading || isUploaded}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium transition-all ${
-                      isUploaded
-                        ? 'bg-transparent text-[#a855f7] cursor-default'
-                        : 'bg-[#a855f7] text-white hover:bg-[#9333ea] shadow-lg shadow-purple-500/20 active:scale-95'
-                    }`}
-                  >
-                    {isUploading  ? <Loader2 size={14} className="animate-spin-slow" />
-                     : isUploaded ? <CheckCircle2 size={14} />
-                     :              <Upload size={14} />}
-                    {isUploading ? 'Syncing...' : isUploaded ? 'Uploaded' : 'Upload PDF'}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+                    <span className="w-1 h-1 rounded-full bg-orange-400/60 flex-shrink-0" />
+                    {label}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="mt-20">
-        <NavigationButtons onNext={handleNext} onBack={prevStep} />
+      {/* Navigation */}
+      <div className="mt-16 pt-8 border-t border-slate-200 dark:border-white/5">
+        <NavigationButtons onNext={handleContinue} onBack={prevStep} />
       </div>
     </div>
   );
