@@ -6,7 +6,7 @@ const BASE_URL =
   import.meta.env.VITE_API_URL?.replace(/\/$/, "") ||
   "http://localhost:5000/api";
 
-const SIG_KEY     = "aether_signature";
+const SIG_KEY       = "aether_signature";
 const getSessionSig = () => sessionStorage.getItem(SIG_KEY) || null;
 
 export const useOnboardingStore = create(
@@ -77,24 +77,20 @@ export const useOnboardingStore = create(
         try {
           const { formData } = get();
 
-          // Signature — try formData then sessionStorage
           const signatureData = formData.signatureData || getSessionSig();
 
           const fd = new FormData();
 
-          // Single file fields
           ["profileImage", "idFront", "idBack"].forEach((key) => {
             const file = fileStore.get(key);
             if (file instanceof File) fd.append(key, file);
           });
 
-          // Compliance documents
           const docEntries = fileStore.getMany("documents__files") || [];
           docEntries.forEach(({ file }) => {
             if (file instanceof File) fd.append("documents", file);
           });
 
-          // Convert files to base64 for receipt display
           const toBase64 = (file) =>
             new Promise((resolve) => {
               if (!(file instanceof File)) return resolve(null);
@@ -103,20 +99,26 @@ export const useOnboardingStore = create(
               reader.readAsDataURL(file);
             });
 
-          const [profileImageB64, idFrontB64, idBackB64] = await Promise.all([
-            toBase64(fileStore.get("profileImage")),
-            toBase64(fileStore.get("idFront")),
-            toBase64(fileStore.get("idBack")),
-          ]);
+          // ── FIX: fallback to formData __preview if fileStore is empty ──
+          const profileImageB64 =
+            await toBase64(fileStore.get("profileImage")) ||
+            formData.profileImage__preview || null;
 
-          // Text payload — exclude large/internal fields
+          const idFrontB64 =
+            await toBase64(fileStore.get("idFront")) ||
+            formData.idFront__preview || null;
+
+          const idBackB64 =
+            await toBase64(fileStore.get("idBack")) ||
+            formData.idBack__preview || null;
+
           const textData = {};
           for (const [key, val] of Object.entries(formData)) {
             if (
               key.endsWith("__name") ||
               key.endsWith("__preview") ||
               key === "documents__names" ||
-              key === "signatureData"  // send via textData below
+              key === "signatureData"
             ) continue;
             if (Array.isArray(val) || (typeof val === "object" && val !== null)) {
               textData[key] = JSON.stringify(val);
@@ -124,7 +126,6 @@ export const useOnboardingStore = create(
               textData[key] = val;
             }
           }
-          // Include signature
           if (signatureData) textData.signatureData = signatureData;
 
           fd.append("formData", JSON.stringify(textData));
@@ -142,19 +143,18 @@ export const useOnboardingStore = create(
           const responseData = await res.json();
           if (!res.ok) throw new Error(responseData.message || "Submission failed");
 
-          // Keep base64 images in memory only (submissionResult) — NOT persisted
           const submissionResult = {
-            submissionId:   responseData.data?.id || responseData._id,
-            submittedAt:    new Date().toISOString(),
-            applicantName:  formData.firstName
+            submissionId:    responseData.data?.id || responseData._id,
+            submittedAt:     new Date().toISOString(),
+            applicantName:   formData.firstName
               ? `${formData.firstName} ${formData.lastName || ""}`.trim()
               : formData.companyName || formData.legalName || "Applicant",
-            email:          formData.email,
-            accountType:    formData.accountType,
-            signatureData,        // from sessionStorage — in memory only
-            profileImageB64,      // in memory only
-            idFrontB64,           // in memory only
-            idBackB64,            // in memory only
+            email:           formData.email,
+            accountType:     formData.accountType,
+            signatureData,
+            profileImageB64,
+            idFrontB64,
+            idBackB64,
           };
 
           fileStore.clear();
@@ -181,7 +181,6 @@ export const useOnboardingStore = create(
         const { submissionResult, formData } = get();
         const result = submissionResult || {};
 
-        // Lazy load — only if receipt is requested
         const { default: jsPDF }       = await import("jspdf");
         const { default: html2canvas } = await import("html2canvas");
 
@@ -201,40 +200,26 @@ export const useOnboardingStore = create(
             : `<p style="color:#aaa;font-size:12px;margin:0">${label}: Not available</p>`;
 
         const docs    = formData.documents || {};
+        // ── FIX: document filename dark, only checkmark green ──
         const docRows = Object.entries(docs)
           .filter(([, d]) => d?.name)
           .map(([id, d]) => `
             <tr>
-              <td style="padding:7px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;text-transform:capitalize">${id.replace(/_/g, " ")}</td>
-              <td style="padding:7px 12px;border-bottom:1px solid #f0f0f0;color:#10b981;font-size:13px">✓ ${d.name}</td>
+              <td style="padding:7px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;text-transform:capitalize">
+                ${id.replace(/_/g, " ")}
+              </td>
+              <td style="padding:7px 12px;border-bottom:1px solid #f0f0f0;font-size:13px">
+                <span style="color:#10b981;font-weight:600">✓ </span>
+                <span style="color:#1a1a2e">${d.name}</span>
+              </td>
             </tr>`).join("");
 
         const sigHtml = signatureData
-  ? `
-    <div style="
-      width:260px;
-      height:90px;
-      border:1px solid #eee;
-      border-radius:8px;
-      background:#fff;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      overflow:hidden;
-      padding:8px;
-      box-sizing:border-box;
-    ">
-      <img
-        src="${signatureData}"
-        style="
-          max-width:100%;
-          max-height:100%;
-          object-fit:contain;
-          display:block;
-        "
-      />
-    </div>
-  `
+          ? `<div style="width:260px;height:90px;border:1px solid #eee;border-radius:8px;background:#fff;
+                         display:flex;align-items:center;justify-content:center;overflow:hidden;
+                         padding:8px;box-sizing:border-box;">
+               <img src="${signatureData}" style="max-width:100%;max-height:100%;object-fit:contain;display:block;" />
+             </div>`
           : `<p style="color:#aaa;font-size:13px;margin:0">Not available</p>`;
 
         const wrap = document.createElement("div");
@@ -361,20 +346,26 @@ export const useOnboardingStore = create(
         step:        state.step,
         reachedStep: state.reachedStep,
         isSubmitted: state.isSubmitted,
-        // Only persist small text fields — NO base64, NO signatureData
+        // ── FIX: persist images so PDF works after refresh ──
         submissionResult: state.submissionResult ? {
-          submissionId:  state.submissionResult.submissionId,
-          submittedAt:   state.submissionResult.submittedAt,
-          applicantName: state.submissionResult.applicantName,
-          email:         state.submissionResult.email,
-          accountType:   state.submissionResult.accountType,
+          submissionId:    state.submissionResult.submissionId,
+          submittedAt:     state.submissionResult.submittedAt,
+          applicantName:   state.submissionResult.applicantName,
+          email:           state.submissionResult.email,
+          accountType:     state.submissionResult.accountType,
+          profileImageB64: state.submissionResult.profileImageB64 || null,
+          idFrontB64:      state.submissionResult.idFrontB64      || null,
+          idBackB64:       state.submissionResult.idBackB64       || null,
+          signatureData:   state.submissionResult.signatureData   || null,
         } : null,
         formData: Object.fromEntries(
-          Object.entries(state.formData).filter(
-            ([k]) =>
-              k !== "signatureData" &&
-              !k.endsWith("__preview")
-          )
+          Object.entries(state.formData).filter(([k]) => {
+            if (k === "signatureData") return false;
+            // ── FIX: keep image previews for badge + PDF fallback ──
+            if (["profileImage__preview", "idFront__preview", "idBack__preview"].includes(k)) return true;
+            if (k.endsWith("__preview")) return false;
+            return true;
+          })
         ),
       }),
     },
