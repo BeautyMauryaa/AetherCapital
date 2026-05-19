@@ -13,6 +13,10 @@ const uploadFileToDrive = async (
   subFolder = null,
 ) => {
   try {
+    console.log("MAIN FOLDER ID:", FOLDER_ID);
+console.log("SUBFOLDER:", subFolder);
+console.log("Uploading started...");
+console.log("Folder ID:", FOLDER_ID);
     let targetFolderId = FOLDER_ID;
     if (subFolder) {
       targetFolderId = await getOrCreateSubFolder(subFolder, FOLDER_ID);
@@ -54,7 +58,8 @@ const uploadFileToDrive = async (
       directUrl: `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`,
     };
   } catch (error) {
-    console.error("Google Drive upload error:", error.message);
+    console.error("FULL GOOGLE ERROR:");
+console.error(error);
     throw new ApiError(
       500,
       `Failed to upload to Google Drive: ${error.message}`,
