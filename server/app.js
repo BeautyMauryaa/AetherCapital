@@ -37,7 +37,6 @@ app.use(
     credentials: true,
   })
 );
-);
 
 
 // ─── Body Parser ─────────────────────────────
