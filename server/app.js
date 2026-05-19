@@ -21,12 +21,10 @@ const app = express();
 
 app.use(
   cors({
-   origin: [
+    origin: [
       "http://localhost:5173",
       "http://localhost:5174",
-      "https://aethercapital3.onrender.com",
-      process.env.FRONTEND_URL,
-      process.env.ADMIN_URL,
+      "https://aether-admin-panel.onrender.com",
     ],
 
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
@@ -38,6 +36,7 @@ app.use(
 
     credentials: true,
   })
+);
 );
 
 
