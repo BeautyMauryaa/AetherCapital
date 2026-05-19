@@ -1,43 +1,267 @@
+// import Onboarding from "../models/onboarding.model.js";
+// import { uploadFileToDrive } from "../services/googledrive.service.js";
+// import { ApiError } from "../utils/ApiError.js";
+// import { ApiResponse } from "../utils/ApiResponse.js";
+// import { asyncHandler } from "../utils/asyncHandler.js";
+
+// // ─── Helper: upload base64 string to Drive ────────────────────────────────────
+// const uploadBase64ToDrive = async (base64String, fileName, mimeType, folder) => {
+//   const base64Data = base64String.replace(/^data:image\/\w+;base64,/, "");
+//   const buffer = Buffer.from(base64Data, "base64");
+//   return uploadFileToDrive(buffer, fileName, mimeType, folder);
+// };
+
+// export const submitOnboarding = asyncHandler(async (req, res) => {
+
+//   // Parse text form data
+//   const raw = req.body.formData ? JSON.parse(req.body.formData) : req.body;
+
+//   const {
+//     // Step 1
+//     accountType,
+//     // Step 2
+//     firstName, middleName, lastName,
+//     dobDay, dobMonth, dobYear,
+//     gender, nationality,
+//     // Step 3
+//     country, address1, address2, city, state, zip,
+//     sameAsPrimary, mailAddress1, mailCity, mailState, mailPostal, timezone,
+//     // Step 4
+//     roles, departments, permissions, twoFA, tfaMethod,
+//     // Step 5 (questionnaire answers saved as-is)
+//     questionnaire, riskScore, riskLevel,
+//     // Step 6
+//     signatureData, agreedToTerms,
+//   } = raw;
+
+//   // ── Upload files to Google Drive ──────────────────────────────────────────
+//   const driveUploads = {};
+
+//   // Profile image
+//   if (req.files?.profileImage?.[0]) {
+//     const f = req.files.profileImage[0];
+//     driveUploads.profileImage = await uploadFileToDrive(
+//       f.buffer, f.originalname, f.mimetype, "profile-images"
+//     );
+//   }
+
+//   // ID Front
+//   if (req.files?.idFront?.[0]) {
+//     const f = req.files.idFront[0];
+//     driveUploads.idFront = await uploadFileToDrive(
+//       f.buffer, f.originalname, f.mimetype, "identity-docs"
+//     );
+//   }
+
+//   // ID Back
+//   if (req.files?.idBack?.[0]) {
+//     const f = req.files.idBack[0];
+//     driveUploads.idBack = await uploadFileToDrive(
+//       f.buffer, f.originalname, f.mimetype, "identity-docs"
+//     );
+//   }
+
+//   // Compliance documents
+//   if (req.files?.documents?.length > 0) {
+//     const docUploads = await Promise.all(
+//       req.files.documents.map((f) =>
+//         uploadFileToDrive(f.buffer, f.originalname, f.mimetype, "compliance-docs")
+//       )
+//     );
+//     driveUploads.documents = docUploads;
+//   }
+
+//   // Signature — comes as base64 string, convert to PNG and upload to Drive
+//   if (signatureData) {
+//     driveUploads.signature = await uploadBase64ToDrive(
+//       signatureData,
+//       `signature_${Date.now()}.png`,
+//       "image/png",
+//       "signatures"
+//     );
+//   }
+
+//   // ── Save everything to MongoDB ────────────────────────────────────────────
+//   const onboarding = await Onboarding.create({
+//     // Step 1
+//     accountType,
+
+//     // Step 2
+//     firstName, middleName, lastName,
+//     dateOfBirth: dobDay && dobMonth && dobYear
+//       ? new Date(`${dobYear}-${dobMonth}-${dobDay}`)
+//       : undefined,
+//     gender, nationality,
+
+//     // Step 3
+//     address: { street: address1, street2: address2, city, state, postalCode: zip, country, timezone },
+//     sameAsPrimary,
+//     mailingAddress: !sameAsPrimary
+//       ? { street: mailAddress1, city: mailCity, state: mailState, postalCode: mailPostal }
+//       : undefined,
+
+//     // Step 4
+//     roles: typeof roles === "string" ? JSON.parse(roles) : roles,
+//     departments: typeof departments === "string" ? JSON.parse(departments) : departments,
+//     permissions: typeof permissions === "string" ? JSON.parse(permissions) : permissions,
+//     twoFactorEnabled: twoFA === "true" || twoFA === true,
+//     twoFactorMethod: tfaMethod,
+
+//     // Step 5
+//     questionnaire: typeof questionnaire === "string" ? JSON.parse(questionnaire) : questionnaire,
+//     riskScore: riskScore ? Number(riskScore) : undefined,
+//     riskLevel,
+
+//     // Step 6
+//     termsAccepted: agreedToTerms === "true" || agreedToTerms === true,
+//     termsAcceptedAt: new Date(),
+//     submittedAt: new Date(),
+//     status: "submitted",
+
+//     // Drive file references
+//     profileImage: driveUploads.profileImage,
+//     idFront: driveUploads.idFront,
+//     idBack: driveUploads.idBack,
+//     documents: driveUploads.documents || [],
+//     signature: driveUploads.signature
+//       ? { driveFile: driveUploads.signature, signedAt: new Date() }
+//       : undefined,
+//   });
+
+//   return res.status(201).json(
+//     new ApiResponse(201, { id: onboarding._id }, "Application submitted successfully! 🎉")
+//   );
+// });
+
+// // ─── Get single onboarding (admin) ───────────────────────────────────────────
+// // GET /api/onboarding/:id
+// export const getOnboarding = asyncHandler(async (req, res) => {
+//   const doc = await Onboarding.findById(req.params.id);
+//   if (!doc) throw new ApiError(404, "Not found");
+//   return res.status(200).json(new ApiResponse(200, doc));
+// });
+
+// // ─── Get all onboardings (admin) ─────────────────────────────────────────────
+// // GET /api/onboarding
+// export const getAllOnboardings = asyncHandler(async (req, res) => {
+//   const docs = await Onboarding.find().sort({ createdAt: -1 });
+//   return res.status(200).json(new ApiResponse(200, docs));
+// });
+
+
 import Onboarding from "../models/onboarding.model.js";
 import { uploadFileToDrive } from "../services/googledrive.service.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
+// ─── Risk Score Calculator ────────────────────────────────────────────────────
+export const calculateRiskScore = ({
+  accountType,
+  country,
+  roles,
+  twoFactorEnabled,
+  questionnaire,   // object like { regulated: true, pii: false, ... }
+}) => {
+  let score = 0;
+
+  // Account type weight
+  if (accountType === "enterprise")   score += 30;
+  else if (accountType === "business") score += 20;
+  else                                 score += 10;
+
+  // Sensitive roles
+  if (Array.isArray(roles)) {
+    if (roles.includes("Admin"))   score += 25;
+    if (roles.includes("Billing")) score += 15;
+  }
+
+  // No 2FA is risky
+  if (!twoFactorEnabled) score += 20;
+
+  // Questionnaire — each YES answer adds its weight
+  if (questionnaire && typeof questionnaire === "object" && !Array.isArray(questionnaire)) {
+    if (questionnaire.regulated)         score += 20;
+    if (questionnaire.pii)               score += 15;
+    if (questionnaire.payments)          score += 20;
+    if (questionnaire.minors_pii)        score += 15;
+    if (questionnaire.soc2)              score += 10;
+    if (questionnaire.crypto)            score += 25;
+    if (questionnaire.sanctioned_regions)score += 30;
+    if (questionnaire.pep_services)      score += 20;
+    if (questionnaire.cross_border_storage) score += 15;
+  }
+
+  // High-risk countries
+  if (["AF", "IR", "KP"].includes(country)) score += 25;
+
+  return Math.min(score, 100);
+};
+
 // ─── Helper: upload base64 string to Drive ────────────────────────────────────
 const uploadBase64ToDrive = async (base64String, fileName, mimeType, folder) => {
+  if (!base64String) return null;
   const base64Data = base64String.replace(/^data:image\/\w+;base64,/, "");
   const buffer = Buffer.from(base64Data, "base64");
   return uploadFileToDrive(buffer, fileName, mimeType, folder);
 };
 
+// ─── Safe JSON parse helper ───────────────────────────────────────────────────
+const parseSafe = (val, fallback = null) => {
+  if (val === undefined || val === null) return fallback;
+  if (typeof val === "object") return val;
+  try { return JSON.parse(val); } catch { return fallback; }
+};
+
+
+
+// ─── Submit Onboarding ────────────────────────────────────────────────────────
 export const submitOnboarding = asyncHandler(async (req, res) => {
 
-  // Parse text form data
   const raw = req.body.formData ? JSON.parse(req.body.formData) : req.body;
 
   const {
-    // Step 1
     accountType,
-    // Step 2
     firstName, middleName, lastName,
     dobDay, dobMonth, dobYear,
     gender, nationality,
-    // Step 3
-    country, address1, address2, city, state, zip,
-    sameAsPrimary, mailAddress1, mailCity, mailState, mailPostal, timezone,
+    // Address — frontend sends flat keys
+    country, address1, address2, city, state, zip, timezone,
+    sameAsPrimary, mailAddress1, mailCity, mailState, mailPostal,
     // Step 4
     roles, departments, permissions, twoFA, tfaMethod,
-    // Step 5 (questionnaire answers saved as-is)
-    questionnaire, riskScore, riskLevel,
+    // Step 5 — frontend stores questionnaire answers under "answers" key
+    answers, questionnaire,
     // Step 6
     signatureData, agreedToTerms,
+    // Corporate fields
+    companyName, legalName, tradeName, regNumber, regDate,
+    industry, employeeRange, subsidiaryCount, parentCompany,
+    isListed, tickerSymbol,
+    // email (if captured)
+    email,
   } = raw;
 
-  // ── Upload files to Google Drive ──────────────────────────────────────────
+  // ── Normalise questionnaire ────────────────────────────────────────────────
+  // Frontend Step5 stores answers as formData.answers  (individual flow)
+  // or formData.questionnaire (corporate flow)
+  // Accept either, prefer answers if it's a non-empty object
+  const rawQuestionnaire = (() => {
+    const a = parseSafe(answers,       null);
+    const q = parseSafe(questionnaire, null);
+    if (a && typeof a === "object" && !Array.isArray(a) && Object.keys(a).length > 0) return a;
+    if (q && typeof q === "object" && !Array.isArray(q) && Object.keys(q).length > 0) return q;
+    return {};
+  })();
+
+  const parsedRoles       = parseSafe(roles,       []);
+  const parsedDepartments = parseSafe(departments, []);
+  const parsedPermissions = parseSafe(permissions, {});
+  const isTwoFAEnabled    = twoFA === "true" || twoFA === true;
+
+  // ── Upload files to Drive ─────────────────────────────────────────────────
   const driveUploads = {};
 
-  // Profile image
   if (req.files?.profileImage?.[0]) {
     const f = req.files.profileImage[0];
     driveUploads.profileImage = await uploadFileToDrive(
@@ -45,7 +269,6 @@ export const submitOnboarding = asyncHandler(async (req, res) => {
     );
   }
 
-  // ID Front
   if (req.files?.idFront?.[0]) {
     const f = req.files.idFront[0];
     driveUploads.idFront = await uploadFileToDrive(
@@ -53,7 +276,6 @@ export const submitOnboarding = asyncHandler(async (req, res) => {
     );
   }
 
-  // ID Back
   if (req.files?.idBack?.[0]) {
     const f = req.files.idBack[0];
     driveUploads.idBack = await uploadFileToDrive(
@@ -61,68 +283,103 @@ export const submitOnboarding = asyncHandler(async (req, res) => {
     );
   }
 
-  // Compliance documents
   if (req.files?.documents?.length > 0) {
-    const docUploads = await Promise.all(
+    driveUploads.documents = await Promise.all(
       req.files.documents.map((f) =>
         uploadFileToDrive(f.buffer, f.originalname, f.mimetype, "compliance-docs")
       )
     );
-    driveUploads.documents = docUploads;
   }
 
-  // Signature — comes as base64 string, convert to PNG and upload to Drive
   if (signatureData) {
     driveUploads.signature = await uploadBase64ToDrive(
       signatureData,
-      `signature_${Date.now()}.png`,
+      `sig_${Date.now()}.png`,
       "image/png",
       "signatures"
     );
   }
 
-  // ── Save everything to MongoDB ────────────────────────────────────────────
-  const onboarding = await Onboarding.create({
-    // Step 1
-    accountType,
+  console.log("RAW BODY:", raw);
 
-    // Step 2
+console.log("ANSWERS:", answers);
+
+console.log("QUESTIONNAIRE:", questionnaire);
+
+console.log("RAW QUESTIONNAIRE:", rawQuestionnaire);
+
+console.log("PARSED ROLES:", parsedRoles);
+
+console.log("FINAL SCORE:", finalRiskScore);
+  // ── Risk Score ────────────────────────────────────────────────────────────
+  const finalRiskScore = calculateRiskScore({
+    accountType,
+    country,
+    roles:            parsedRoles,
+    twoFactorEnabled: isTwoFAEnabled,
+    questionnaire:    rawQuestionnaire,   // ← correct object now
+  });
+
+  const finalRiskLevel =
+    finalRiskScore >= 70 ? "high"
+    : finalRiskScore >= 40 ? "medium"
+    : "low";
+
+  // ── Save to MongoDB ───────────────────────────────────────────────────────
+  const onboarding = await Onboarding.create({
+    accountType,
+    email,
+
+    // Individual
     firstName, middleName, lastName,
     dateOfBirth: dobDay && dobMonth && dobYear
       ? new Date(`${dobYear}-${dobMonth}-${dobDay}`)
       : undefined,
     gender, nationality,
 
-    // Step 3
-    address: { street: address1, street2: address2, city, state, postalCode: zip, country, timezone },
-    sameAsPrimary,
-    mailingAddress: !sameAsPrimary
+    // Corporate
+    companyName, legalName, tradeName, regNumber, regDate,
+    industry, employeeRange,
+    subsidiaryCount: subsidiaryCount ? Number(subsidiaryCount) : undefined,
+    parentCompany, isListed, tickerSymbol,
+
+    // Address
+    address: {
+      street:     address1,
+      street2:    address2,
+      city, state,
+      postalCode: zip,
+      country,
+      timezone,
+    },
+    sameAsPrimary: sameAsPrimary === "true" || sameAsPrimary === true,
+    mailingAddress: !(sameAsPrimary === "true" || sameAsPrimary === true)
       ? { street: mailAddress1, city: mailCity, state: mailState, postalCode: mailPostal }
       : undefined,
 
-    // Step 4
-    roles: typeof roles === "string" ? JSON.parse(roles) : roles,
-    departments: typeof departments === "string" ? JSON.parse(departments) : departments,
-    permissions: typeof permissions === "string" ? JSON.parse(permissions) : permissions,
-    twoFactorEnabled: twoFA === "true" || twoFA === true,
-    twoFactorMethod: tfaMethod,
+    // Roles & permissions
+    roles:            parsedRoles,
+    departments:      parsedDepartments,
+    permissions:      parsedPermissions,
+    twoFactorEnabled: isTwoFAEnabled,
+    twoFactorMethod:  tfaMethod,
 
-    // Step 5
-    questionnaire: typeof questionnaire === "string" ? JSON.parse(questionnaire) : questionnaire,
-    riskScore: riskScore ? Number(riskScore) : undefined,
-    riskLevel,
+    // Compliance
+    questionnaire: rawQuestionnaire,   // ← saved as object, not array
+    riskScore:     finalRiskScore,
+    riskLevel:     finalRiskLevel,
 
-    // Step 6
-    termsAccepted: agreedToTerms === "true" || agreedToTerms === true,
+    // Legal
+    termsAccepted:   agreedToTerms === "true" || agreedToTerms === true,
     termsAcceptedAt: new Date(),
-    submittedAt: new Date(),
-    status: "submitted",
+    submittedAt:     new Date(),
+    status:          "submitted",
 
-    // Drive file references
+    // Drive files
     profileImage: driveUploads.profileImage,
-    idFront: driveUploads.idFront,
-    idBack: driveUploads.idBack,
-    documents: driveUploads.documents || [],
+    idFront:      driveUploads.idFront,
+    idBack:       driveUploads.idBack,
+    documents:    driveUploads.documents || [],
     signature: driveUploads.signature
       ? { driveFile: driveUploads.signature, signedAt: new Date() }
       : undefined,
@@ -133,16 +390,14 @@ export const submitOnboarding = asyncHandler(async (req, res) => {
   );
 });
 
-// ─── Get single onboarding (admin) ───────────────────────────────────────────
-// GET /api/onboarding/:id
+// ─── Get single onboarding ────────────────────────────────────────────────────
 export const getOnboarding = asyncHandler(async (req, res) => {
   const doc = await Onboarding.findById(req.params.id);
-  if (!doc) throw new ApiError(404, "Not found");
+  if (!doc) throw new ApiError(404, "Onboarding record not found");
   return res.status(200).json(new ApiResponse(200, doc));
 });
 
-// ─── Get all onboardings (admin) ─────────────────────────────────────────────
-// GET /api/onboarding
+// ─── Get all onboardings ──────────────────────────────────────────────────────
 export const getAllOnboardings = asyncHandler(async (req, res) => {
   const docs = await Onboarding.find().sort({ createdAt: -1 });
   return res.status(200).json(new ApiResponse(200, docs));
