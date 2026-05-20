@@ -15,54 +15,29 @@ export const calculateRiskScore = ({
   let score = 0;
 
   // Account type weight
- 
- // Account type weight
-if (accountType === "enterprise") score += 15;
-else if (accountType === "business") score += 10;
-else score += 5;
+  if (accountType === "enterprise") score += 15;
+  else if (accountType === "business") score += 10;
+  else score += 5;
 
-// Sensitive roles
-if (Array.isArray(roles)) {
+  // Sensitive roles
+  if (Array.isArray(roles)) {
+    if (roles.includes("Admin")) score += 10;
+    if (roles.includes("Billing")) score += 5;
+  }
 
-  if (roles.includes("Admin"))
-    score += 10;
+  // No 2FA is risky
+  if (!twoFactorEnabled) score += 10;
 
-  if (roles.includes("Billing"))
-    score += 5;
-
-}
-
-// No 2FA is risky
-if (!twoFactorEnabled)
-  score += 10;
-
-// Questionnaire
-if (questionnaire.regulated)
-  score += 10;
-
-if (questionnaire.pii)
-  score += 8;
-
-if (questionnaire.payments)
-  score += 10;
-
-if (questionnaire.minors_pii)
-  score += 8;
-
-if (questionnaire.soc2)
-  score += 5;
-
-if (questionnaire.crypto)
-  score += 15;
-
-if (questionnaire.sanctioned_regions)
-  score += 20;
-
-if (questionnaire.pep_services)
-  score += 12;
-
-if (questionnaire.cross_border_storage)
-  score += 8;
+  // Questionnaire
+  if (questionnaire.regulated) score += 10;
+  if (questionnaire.pii) score += 8;
+  if (questionnaire.payments) score += 10;
+  if (questionnaire.minors_pii) score += 8;
+  if (questionnaire.soc2) score += 5;
+  if (questionnaire.crypto) score += 15;
+  if (questionnaire.sanctioned_regions) score += 20;
+  if (questionnaire.pep_services) score += 12;
+  if (questionnaire.cross_border_storage) score += 8;
 
   // High-risk countries
   if (["AF", "IR", "KP"].includes(country)) score += 25;
@@ -85,13 +60,15 @@ const parseSafe = (val, fallback = null) => {
   try { return JSON.parse(val); } catch { return fallback; }
 };
 
-
-
 // ─── Submit Onboarding ────────────────────────────────────────────────────────
 export const submitOnboarding = asyncHandler(async (req, res) => {
 
   const raw = req.body.formData ? JSON.parse(req.body.formData) : req.body;
-
+  const {
+    operatingHours,
+    documentLabels,
+  } = raw;
+  
   const {
     accountType,
     firstName, middleName, lastName,
@@ -117,7 +94,6 @@ export const submitOnboarding = asyncHandler(async (req, res) => {
   // ── Normalise questionnaire ────────────────────────────────────────────────
   // Frontend Step5 stores answers as formData.answers  (individual flow)
   // or formData.questionnaire (corporate flow)
-  // Accept either, prefer answers if it's a non-empty object
   const rawQuestionnaire = (() => {
     const a = parseSafe(answers,       null);
     const q = parseSafe(questionnaire, null);
@@ -134,10 +110,24 @@ export const submitOnboarding = asyncHandler(async (req, res) => {
   // ── Upload files to Drive ─────────────────────────────────────────────────
   const driveUploads = {};
 
-  if (req.files?.profileImage?.[0]) {
-    const f = req.files.profileImage[0];
-    driveUploads.profileImage = await uploadFileToDrive(
-      f.buffer, f.originalname, f.mimetype, "profile-images"
+  // FIXED: Single document block preserves labeled array structures cleanly
+  if (req.files?.documents?.length > 0) {
+    const labels = parseSafe(documentLabels, []);
+
+    driveUploads.documents = await Promise.all(
+      req.files.documents.map(async (f, index) => {
+        const uploaded = await uploadFileToDrive(
+          f.buffer,
+          f.originalname,
+          f.mimetype,
+          "compliance-docs"
+        );
+
+        return {
+          type: labels[index] || "Document",
+          ...uploaded,
+        };
+      })
     );
   }
 
@@ -155,13 +145,7 @@ export const submitOnboarding = asyncHandler(async (req, res) => {
     );
   }
 
-  if (req.files?.documents?.length > 0) {
-    driveUploads.documents = await Promise.all(
-      req.files.documents.map((f) =>
-        uploadFileToDrive(f.buffer, f.originalname, f.mimetype, "compliance-docs")
-      )
-    );
-  }
+  // CRITICAL CLEANUP: Overwriting duplicate documents array block has been completely removed.
 
   if (signatureData) {
     driveUploads.signature = await uploadBase64ToDrive(
@@ -172,14 +156,13 @@ export const submitOnboarding = asyncHandler(async (req, res) => {
     );
   }
 
-  
   // ── Risk Score ────────────────────────────────────────────────────────────
   const finalRiskScore = calculateRiskScore({
     accountType,
     country,
     roles:            parsedRoles,
     twoFactorEnabled: isTwoFAEnabled,
-    questionnaire:    rawQuestionnaire,   // ← correct object now
+    questionnaire:    rawQuestionnaire,
   });
 
   const finalRiskLevel =
@@ -205,7 +188,7 @@ export const submitOnboarding = asyncHandler(async (req, res) => {
     subsidiaryCount: subsidiaryCount ? Number(subsidiaryCount) : undefined,
     parentCompany, isListed, tickerSymbol,
 
-    // Address
+    // Address & Operations
     address: {
       street:     address1,
       street2:    address2,
@@ -214,6 +197,10 @@ export const submitOnboarding = asyncHandler(async (req, res) => {
       country,
       timezone,
     },
+    
+    // FIXED: Embedded parseSafe logic saving operatingHours cleanly
+    operatingHours: parseSafe(operatingHours, []),
+    
     sameAsPrimary: sameAsPrimary === "true" || sameAsPrimary === true,
     mailingAddress: !(sameAsPrimary === "true" || sameAsPrimary === true)
       ? { street: mailAddress1, city: mailCity, state: mailState, postalCode: mailPostal }
@@ -227,7 +214,7 @@ export const submitOnboarding = asyncHandler(async (req, res) => {
     twoFactorMethod:  tfaMethod,
 
     // Compliance
-    questionnaire: rawQuestionnaire,   // ← saved as object, not array
+    questionnaire: rawQuestionnaire,
     riskScore:     finalRiskScore,
     riskLevel:     finalRiskLevel,
 
