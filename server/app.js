@@ -25,6 +25,12 @@ app.use(
       "http://localhost:5173",
       "http://localhost:5174",
       "https://aether-admin-panel.onrender.com",
+        "https://aether-admin-panel.onrender.com/submissions",
+      "https://aether-admin-panel.onrender.com/UnderReview",
+      "https://aether-admin-panel.onrender.com/approved",
+      "https://aether-admin-panel.onrender.com/rejected",
+      "https://aether-admin-panel.onrender.com/documents",
+      "https://aether-admin-panel.onrender.com/settings",
         "https://aethercapital3.onrender.com",
     ],
 
