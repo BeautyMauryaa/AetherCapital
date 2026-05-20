@@ -13,11 +13,26 @@ import {
   Box,
 } from "@mui/material";
 
+import { useEffect } from "react";
+
+import { useNavigate } from "react-router-dom";
+
 import { useAdminStore } from "../../store/adminStore";
 
 export default function RecentSubmissions() {
 
-  const { submissions } = useAdminStore();
+  const navigate = useNavigate();
+
+  const {
+    submissions = [],
+    fetchSubmissions,
+  } = useAdminStore();
+
+  useEffect(() => {
+
+    fetchSubmissions();
+
+  }, []);
 
   const recent = submissions.slice(0, 6);
 
@@ -31,6 +46,7 @@ export default function RecentSubmissions() {
   };
 
   return (
+
     <Card
       elevation={0}
       sx={{
@@ -41,6 +57,7 @@ export default function RecentSubmissions() {
     >
 
       {/* Header */}
+
       <Box
         sx={{
           p: 3,
@@ -48,20 +65,24 @@ export default function RecentSubmissions() {
           borderColor: "divider",
         }}
       >
+
         <Typography
           variant="subtitle1"
           fontWeight="700"
         >
           Recent Submissions
         </Typography>
+
       </Box>
 
       {/* Table */}
+
       <TableContainer>
 
         <Table sx={{ minWidth: 800 }}>
 
           <TableHead sx={{ bgcolor: "#F8F9FC" }}>
+
             <TableRow>
 
               <TableCell
@@ -116,6 +137,7 @@ export default function RecentSubmissions() {
               </TableCell>
 
             </TableRow>
+
           </TableHead>
 
           <TableBody>
@@ -129,12 +151,14 @@ export default function RecentSubmissions() {
                   align="center"
                   sx={{ py: 5 }}
                 >
+
                   <Typography
                     variant="body2"
                     color="text.secondary"
                   >
                     No submissions found
                   </Typography>
+
                 </TableCell>
 
               </TableRow>
@@ -149,6 +173,7 @@ export default function RecentSubmissions() {
                 >
 
                   {/* Applicant */}
+
                   <TableCell>
 
                     <Box
@@ -191,6 +216,7 @@ export default function RecentSubmissions() {
                   </TableCell>
 
                   {/* Account Type */}
+
                   <TableCell>
 
                     <Chip
@@ -207,6 +233,7 @@ export default function RecentSubmissions() {
                   </TableCell>
 
                   {/* Risk */}
+
                   <TableCell>
 
                     <Box
@@ -238,6 +265,7 @@ export default function RecentSubmissions() {
                   </TableCell>
 
                   {/* Status */}
+
                   <TableCell>
 
                     <Chip
@@ -265,6 +293,7 @@ export default function RecentSubmissions() {
                   </TableCell>
 
                   {/* Action */}
+
                   <TableCell align="right">
 
                     <Button
@@ -274,6 +303,11 @@ export default function RecentSubmissions() {
                         borderRadius: 2,
                         textTransform: "none",
                       }}
+                      onClick={() =>
+                        navigate(
+                          `/submissions/${sub._id}`
+                        )
+                      }
                     >
                       View
                     </Button>
@@ -293,5 +327,6 @@ export default function RecentSubmissions() {
       </TableContainer>
 
     </Card>
+
   );
 }
