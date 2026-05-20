@@ -15,31 +15,54 @@ export const calculateRiskScore = ({
   let score = 0;
 
   // Account type weight
-  if (accountType === "enterprise")   score += 30;
-  else if (accountType === "business") score += 20;
-  else                                 score += 10;
+ 
+ // Account type weight
+if (accountType === "enterprise") score += 15;
+else if (accountType === "business") score += 10;
+else score += 5;
 
-  // Sensitive roles
-  if (Array.isArray(roles)) {
-    if (roles.includes("Admin"))   score += 25;
-    if (roles.includes("Billing")) score += 15;
-  }
+// Sensitive roles
+if (Array.isArray(roles)) {
 
-  // No 2FA is risky
-  if (!twoFactorEnabled) score += 20;
+  if (roles.includes("Admin"))
+    score += 10;
 
-  // Questionnaire — each YES answer adds its weight
-  if (questionnaire && typeof questionnaire === "object" && !Array.isArray(questionnaire)) {
-    if (questionnaire.regulated)         score += 20;
-    if (questionnaire.pii)               score += 15;
-    if (questionnaire.payments)          score += 20;
-    if (questionnaire.minors_pii)        score += 15;
-    if (questionnaire.soc2)              score += 10;
-    if (questionnaire.crypto)            score += 25;
-    if (questionnaire.sanctioned_regions)score += 30;
-    if (questionnaire.pep_services)      score += 20;
-    if (questionnaire.cross_border_storage) score += 15;
-  }
+  if (roles.includes("Billing"))
+    score += 5;
+
+}
+
+// No 2FA is risky
+if (!twoFactorEnabled)
+  score += 10;
+
+// Questionnaire
+if (questionnaire.regulated)
+  score += 10;
+
+if (questionnaire.pii)
+  score += 8;
+
+if (questionnaire.payments)
+  score += 10;
+
+if (questionnaire.minors_pii)
+  score += 8;
+
+if (questionnaire.soc2)
+  score += 5;
+
+if (questionnaire.crypto)
+  score += 15;
+
+if (questionnaire.sanctioned_regions)
+  score += 20;
+
+if (questionnaire.pep_services)
+  score += 12;
+
+if (questionnaire.cross_border_storage)
+  score += 8;
 
   // High-risk countries
   if (["AF", "IR", "KP"].includes(country)) score += 25;
