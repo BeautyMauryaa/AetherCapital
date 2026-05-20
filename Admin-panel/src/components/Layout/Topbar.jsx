@@ -29,27 +29,39 @@ export default function Topbar({ title }) {
         <Box sx={{ flex: 1 }} />
 
         {/* Search */}
-        <TextField
-          size="small"
-          placeholder="Search submissions..."
-          value={val}
-          onChange={handleSearch}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchRounded sx={{ color: '#94a3b8', fontSize: 18 }} />
-              </InputAdornment>
-            ),
-          }}
-          sx={{
-            width: 280,
-            '& .MuiOutlinedInput-root': {
-              background: '#f8fafc',
-              '& fieldset': { borderColor: '#e2e8f0' },
-              '&:hover fieldset': { borderColor: '#cbd5e1' },
-            },
-          }}
-        />
+      <TextField
+  size="small"
+  placeholder="Search submissions..."
+  value={val}
+  onChange={handleSearch}
+  InputProps={{
+    startAdornment: (
+      <InputAdornment position="start">
+        <SearchRounded sx={{ color: '#94a3b8', fontSize: 18 }} />
+      </InputAdornment>
+    ),
+  }}
+  sx={{
+    width: 280,
+    '& .MuiOutlinedInput-root': {
+      background: '#f8fafc',
+      '& fieldset': { borderColor: '#e2e8f0' },
+      '&:hover fieldset': { borderColor: '#cbd5e1' },
+      '&.Mui-focused fieldset': { borderColor: '#94a3b8', borderWidth: '1px' }
+    },
+ 
+    '& input::placeholder': {
+      color: '#94a3b8',       
+      opacity: 1,             
+      fontSize: '0.82rem',   
+      fontWeight: 500
+    },
+    '& input': {
+      color: '#1e293b',      
+      fontSize: '0.82rem'
+    }
+  }}
+/>
 
         {/* Notifications */}
         <IconButton size="small" sx={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 2 }}>
