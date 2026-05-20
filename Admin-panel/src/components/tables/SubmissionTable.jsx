@@ -89,6 +89,7 @@ export default function SubmissionTable({ submissions, title, isApprovedPage, fi
     fontSize: "0.78rem",
     fontWeight: "500",
     color: "#333",
+    width: { xs: "100%", sm: "auto" }, // Expands beautifully on thin viewports
     "& .MuiSelect-select": { py: 0.75, pl: 1.5, pr: "32px !important" },
     "& .MuiOutlinedInput-notchedOutline": { borderColor: "#e5e7eb" },
     "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#d1d5db" },
@@ -97,16 +98,16 @@ export default function SubmissionTable({ submissions, title, isApprovedPage, fi
 
   return (
     <>
-      <Card sx={{ borderRadius: "16px", boxShadow: "0px 1px 3px rgba(0,0,0,0.05)", border: "1px solid #f3f4f6", bgcolor: "#fff" }}>
+      <Card sx={{ borderRadius: "16px", boxShadow: "0px 1px 3px rgba(0,0,0,0.05)", border: "1px solid #f3f4f6", bgcolor: "#fff", overflow: "hidden" }}>
         
-        {/* Unified Card Header Block */}
-        <Box p={3} display="flex" flexDirection={{ xs: "column", md: "row" }} gap={2} justifyContent="space-between" alignItems={{ xs: "flex-start", md: "center" }}>
+        {/* Optimized Header Area for Responsive Flow */}
+        <Box p={3} display="flex" flexDirection={{ xs: "column", lg: "row" }} gap={2} justifyContent="space-between" alignItems={{ xs: "stretch", lg: "center" }}>
           <Typography variant="subtitle1" fontWeight="700" sx={{ color: "#111827", fontSize: "0.95rem" }}>
             {title || "All Submissions"}
           </Typography>
           
           {filterState && (
-            <Box display="flex" flexWrap="wrap" alignItems="center" gap={1} width={{ xs: "100%", md: "auto" }}>
+            <Box display="flex" flexWrap="wrap" alignItems="center" gap={1} width={{ xs: "100%", lg: "auto" }}>
               <Select 
                 value={typeFilter} 
                 onChange={(e) => setTypeFilter?.(e.target.value)}
@@ -145,13 +146,14 @@ export default function SubmissionTable({ submissions, title, isApprovedPage, fi
               </Select>
 
               <Box sx={{
-                display: "inline-flex", alignItems: "center", gap: 0.5, 
+                display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 0.5, 
                 border: "1px solid #e5e7eb", borderRadius: "8px", px: 1.5, py: 0.75, 
                 cursor: "pointer", fontSize: "0.78rem", fontWeight: "600", color: "#374151",
-                transition: "0.2s", "&:hover": { bgcolor: "#f9fafb" }
+                transition: "0.2s", width: { xs: "100%", sm: "auto" },
+                "&:hover": { bgcolor: "#f9fafb" }
               }}>
                 <FileDownloadOutlined sx={{ fontSize: 16, color: "#ef4444" }} />
-                <Typography onClick={() => exportCSV(submissions)} sx={{ color: "#ef4444" }}>
+                <Typography onClick={() => exportCSV(submissions)} sx={{ color: "#ef4444", fontSize: "0.78rem", fontWeight: "600" }}>
                   Export CSV
                 </Typography>
               </Box>
@@ -159,11 +161,21 @@ export default function SubmissionTable({ submissions, title, isApprovedPage, fi
           )}
         </Box>
 
-        {/* ── UNIFIED TABLE VIEW WITH HORIZONTAL SCROLL FOR MOBILE ── */}
-        <TableContainer sx={{ width: "100%", overflowX: "auto" }}>
-          <Table sx={{ minWidth: 650 }}>
+        {/* ── UNIFIED TABLE VIEW WITH MINIMAL SCROLLBAR AESTHETICS ── */}
+        <TableContainer 
+          sx={{ 
+            width: "100%", 
+            overflowX: "auto",
+            // Clean webkit scrollbar overrides so it matches a high-end dashboard
+            "&::-webkit-scrollbar": { height: "6px" },
+            "&::-webkit-scrollbar-track": { bgcolor: "#f9fafb" },
+            "&::-webkit-scrollbar-thumb": { bgcolor: "#e5e7eb", borderRadius: "10px" },
+            "&::-webkit-scrollbar-thumb:hover": { bgcolor: "#d1d5db" }
+          }}
+        >
+          <Table sx={{ minWidth: 800 }}>
             <TableHead>
-              <TableRow sx={{ borderBottom: "1px solid #f3f4f6" }}>
+              <TableRow sx={{ borderBottom: "1px solid #f3f4f6", bgcolor: "#f9fafb" }}>
                 <TableCell sx={{ fontWeight: "600", color: "#9ca3af", fontSize: "0.72rem", letterSpacing: "0.05em", py: 1.5 }}>APPLICANT</TableCell>
                 <TableCell sx={{ fontWeight: "600", color: "#9ca3af", fontSize: "0.72rem", letterSpacing: "0.05em", py: 1.5 }}>TYPE</TableCell>
                 <TableCell sx={{ fontWeight: "600", color: "#9ca3af", fontSize: "0.72rem", letterSpacing: "0.05em", py: 1.5 }}>REF NO</TableCell>
@@ -215,13 +227,13 @@ export default function SubmissionTable({ submissions, title, isApprovedPage, fi
                     </Typography>
                   </TableCell>
 
-                  <TableCell sx={{ fontSize: "0.8rem", color: "#111827", fontWeight: "500" }}>
+                  <TableCell sx={{ fontSize: "0.8rem", color: "#111827", fontWeight: "500", whiteSpace: "nowrap" }}>
                     {item.submittedAt
                       ? new Date(item.submittedAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
                       : item.submitted || "—"}
                   </TableCell>
 
-                  <TableCell width="150px">
+                  <TableCell width="160px">
                     <Box display="flex" alignItems="center" gap={1.5}>
                       <LinearProgress
                         variant="determinate"
