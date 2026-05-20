@@ -1,324 +1,51 @@
-// import { useNavigate } from "react-router-dom";
-// import {
-//   Card,
-//   Table,
-//   TableBody,
-//   TableCell,
-//   TableContainer,
-//   TableHead,
-//   TableRow,
-//   Typography,
-//   Avatar,
-//   Box,
-//   LinearProgress,
-//   Button,
-// } from "@mui/material";
-
-// import TypeChip from "../common/TypeChip";
-
-// export default function SubmissionTable({
-//   submissions = [],
-//   title,
-//   isApprovedPage,
-// }) {
-//   const getRiskColor = (score) => {
-//     if (score >= 75) return "#d32f2f";
-//     if (score >= 60) return "#f44336";
-//     if (score >= 45) return "#ffa726";
-
-//     return "#66bb6a";
-//   };
-
-//   return (
-//     <Card
-//       sx={{
-//         borderRadius: 4,
-//         boxShadow: "none",
-//         border: "1px solid #f0f0f0",
-//       }}
-//     >
-//       <Box p={3}>
-//         <Typography variant="h6" fontWeight="700">
-//           {title || "All Submissions"}
-//         </Typography>
-//       </Box>
-
-//       <TableContainer>
-//         <Table>
-//           <TableHead sx={{ backgroundColor: "#fafafa" }}>
-//             <TableRow>
-//               <TableCell
-//                 sx={{
-//                   fontWeight: "600",
-//                   color: "#888",
-//                   fontSize: "0.75rem",
-//                 }}
-//               >
-//                 APPLICANT
-//               </TableCell>
-
-//               <TableCell
-//                 sx={{
-//                   fontWeight: "600",
-//                   color: "#888",
-//                   fontSize: "0.75rem",
-//                 }}
-//               >
-//                 TYPE
-//               </TableCell>
-
-//               <TableCell
-//                 sx={{
-//                   fontWeight: "600",
-//                   color: "#888",
-//                   fontSize: "0.75rem",
-//                 }}
-//               >
-//                 REF NO
-//               </TableCell>
-
-//               <TableCell
-//                 sx={{
-//                   fontWeight: "600",
-//                   color: "#888",
-//                   fontSize: "0.75rem",
-//                 }}
-//               >
-//                 {isApprovedPage ? "APPROVED DATE" : "SUBMITTED"}
-//               </TableCell>
-
-//               <TableCell
-//                 sx={{
-//                   fontWeight: "600",
-//                   color: "#888",
-//                   fontSize: "0.75rem",
-//                 }}
-//               >
-//                 RISK
-//               </TableCell>
-
-//               <TableCell
-//                 align="center"
-//                 sx={{
-//                   fontWeight: "600",
-//                   color: "#888",
-//                   fontSize: "0.75rem",
-//                 }}
-//               >
-//                 ACTIONS
-//               </TableCell>
-//             </TableRow>
-//           </TableHead>
-
-//           <TableBody>
-//             {submissions.map((item) => {
-//               const fullName =
-//                 `${item.firstName || ""} ${item.lastName || ""}`.trim();
-
-//               const risk = Number(item.riskScore) || 0;
-
-//               return (
-//                 <TableRow key={item._id} hover>
-//                   {/* Status */}
-                 
-//                   {/* Applicant */}
-//                   <TableCell>
-//                     <Box display="flex" alignItems="center" gap={1.5}>
-//                       <Avatar
-//                         sx={{
-//                           bgcolor: "#9c27b0",
-//                           width: 32,
-//                           height: 32,
-//                           fontSize: "0.8rem",
-//                         }}
-//                       >
-//                         {fullName
-//                           ?.split(" ")
-//                           .map((n) => n[0])
-//                           .join("")}
-//                       </Avatar>
-
-//                       <Box>
-//                         <Typography
-//                           variant="body2"
-//                           fontWeight="600"
-//                           sx={{ lineHeight: 1.2 }}
-//                         >
-//                           {fullName || "No Name"}
-//                         </Typography>
-
-//                         <Typography variant="caption" color="text.secondary">
-//                           {item.email || "No Email"}
-//                         </Typography>
-//                       </Box>
-//                     </Box>
-//                   </TableCell>
-
-//                   {/* Type */}
-//                   <TableCell>
-//                     <TypeChip type={item.accountType} />
-//                   </TableCell>
-
-//                   {/* Ref */}
-//                   <TableCell>
-//                     <Typography
-//                       variant="caption"
-//                       sx={{
-//                         bgcolor: "#f5f5f5",
-//                         px: 1,
-//                         py: 0.5,
-//                         borderRadius: 1,
-//                         fontWeight: "500",
-//                         border: "1px solid #e0e0e0",
-//                       }}
-//                     >
-//                       {item._id?.slice(-6).toUpperCase()}
-//                     </Typography>
-//                   </TableCell>
-
-//                   {/* Submitted */}
-//                   <TableCell
-//                     sx={{
-//                       fontSize: "0.85rem",
-//                       color: "#444",
-//                     }}
-//                   >
-//                     {item.submittedAt
-//                       ? new Date(item.submittedAt).toLocaleDateString()
-//                       : "-"}
-//                   </TableCell>
-
-//                   {/* Risk */}
-//                   <TableCell width="140px">
-//                     <Box display="flex" alignItems="center" gap={1}>
-//                       <LinearProgress
-//                         variant="determinate"
-//                         value={risk}
-//                         sx={{
-//                           flexGrow: 1,
-//                           height: 4,
-//                           borderRadius: 2,
-//                           bgcolor: "#eee",
-
-//                           "& .MuiLinearProgress-bar": {
-//                             backgroundColor: getRiskColor(risk),
-//                           },
-//                         }}
-//                       />
-
-//                       <Typography
-//                         variant="caption"
-//                         fontWeight="bold"
-//                         sx={{
-//                           color: getRiskColor(risk),
-//                         }}
-//                       >
-//                         {risk}%
-//                       </Typography>
-//                     </Box>
-//                   </TableCell>
-//                    <TableCell>
-//                     <Box
-//                       sx={{
-//                         px: 1.5,
-//                         py: 0.5,
-//                         borderRadius: "999px",
-//                         fontSize: "0.75rem",
-//                         fontWeight: 700,
-//                         display: "inline-flex",
-
-//                         bgcolor:
-//                           item.status === "approved"
-//                             ? "#dcfce7"
-//                             : item.status === "rejected"
-//                               ? "#fee2e2"
-//                               : item.status === "under_review"
-//                                 ? "#dbeafe"
-//                                 : "#fef3c7",
-
-//                         color:
-//                           item.status === "approved"
-//                             ? "#15803d"
-//                             : item.status === "rejected"
-//                               ? "#dc2626"
-//                               : item.status === "under_review"
-//                                 ? "#2563eb"
-//                                 : "#d97706",
-//                       }}
-//                     >
-//                       {item.status?.replace("_", " ")}
-//                     </Box>
-//                   </TableCell>
-
-//                   {/* Actions */}
-//                   <TableCell align="center">
-//                     <Button
-//                       variant="outlined"
-//                       size="small"
-//                       onClick={() => navigate(`/submissions/${item._id}`)}
-//                       sx={{
-//                         textTransform: "none",
-//                         borderRadius: "8px",
-//                         borderColor: "#e0e0e0",
-//                         color: "#333",
-//                         fontSize: "0.75rem",
-//                         fontWeight: "600",
-//                         px: 3,
-//                       }}
-//                     >
-//                       View
-//                     </Button>
-//                   </TableCell>
-//                 </TableRow>
-//               );
-//             })}
-//           </TableBody>
-//         </Table>
-//       </TableContainer>
-//     </Card>
-//   );
-// }
-
 import React, { useState } from "react";
 import {
   Card, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Typography, Avatar, Box,
-  LinearProgress, Button, IconButton, Menu, MenuItem,
-  ListItemIcon, ListItemText,
+  LinearProgress, IconButton, Menu, MenuItem,
+  ListItemIcon, ListItemText, Select
 } from "@mui/material";
 import {
-  MoreVertRounded, VisibilityRounded, CheckCircleRounded,
-  CancelRounded, ManageSearchRounded,
+  MoreHorizRounded, VisibilityRounded, CheckCircleRounded,
+  CancelRounded, ManageSearchRounded, CalendarTodayRounded,
+  FingerprintRounded, AssessmentRounded, FileDownloadOutlined,
+  KeyboardArrowDownRounded
 } from "@mui/icons-material";
 import TypeChip from "../common/TypeChip";
 import SubmissionDrawer from "../common/SubmissionDrawer";
 import { useAdminStore } from "../../store/adminStore";
+import exportCSV from "../../utils/exportCSV";
 
-export default function SubmissionTable({ submissions, title, isApprovedPage }) {
 
-  // ── Drawer state ──────────────────────────────────────────────────────────
-  const [drawerOpen,       setDrawerOpen]       = useState(false);
-  const [selectedRow,      setSelectedRow]       = useState(null);
 
-  // ── Action menu state ─────────────────────────────────────────────────────
-  const [anchorEl,         setAnchorEl]          = useState(null);
-  const [menuRow,          setMenuRow]            = useState(null);
+export default function SubmissionTable({ submissions, title, isApprovedPage, filterState }) {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedRow, setSelectedRow] = useState(null);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [menuRow, setMenuRow] = useState(null);
 
   const updateStatus = useAdminStore((s) => s.updateStatus);
 
+  // Destructure parent filters safely with fallbacks
+  const {
+    typeFilter = "All Types", setTypeFilter,
+    statusFilter = "All Status", setStatusFilter,
+    riskFilter = "All Risk", setRiskFilter
+  } = filterState || {};
+
+  const handleDrawerClose = () => setDrawerOpen(false);
+
   const getRiskColor = (score) => {
-    if (score >= 75) return "#d32f2f";
-    if (score >= 60) return "#f44336";
-    if (score >= 45) return "#ffa726";
-    return "#66bb6a";
+    if (score >= 75) return "#5c0606"; 
+    if (score >= 60) return "#d32f2f"; 
+    if (score >= 40) return "#f59e0b"; 
+    return "#10b981"; 
   };
 
   const openDrawer = (row) => {
     setSelectedRow(row);
     setDrawerOpen(true);
-    // Close action menu if open
-    setAnchorEl(null);
-    setMenuRow(null);
+    closeMenu();
   };
 
   const openMenu = (e, row) => {
@@ -337,206 +64,307 @@ export default function SubmissionTable({ submissions, title, isApprovedPage }) 
     closeMenu();
   };
 
-  // When drawer closes, sync updated data back to selectedRow
-  const handleDrawerClose = () => {
-    setDrawerOpen(false);
-    // Keep selectedRow so drawer animates out nicely
+  const renderStatus = (status) => {
+    const normalized = status?.toLowerCase() || "pending";
+    const statusStyle = {
+      approved:     { color: "#10b981", bg: "#e6f4ea" },
+      rejected:     { color: "#ef4444", bg: "#fce8e6" },
+      pending:      { color: "#f59e0b", bg: "#fef3c7" },
+      "under review": { color: "#2563eb", bg: "#e0f2fe" },
+      under_review: { color: "#2563eb", bg: "#e0f2fe" },
+    }[normalized] || { color: "#4b5563", bg: "#f3f4f6" };
+
+    return (
+      <Box sx={{
+        display: "inline-flex", px: 2, py: 0.75,
+        borderRadius: "20px", bgcolor: statusStyle.bg,
+        color: statusStyle.color, fontWeight: "600",
+        fontSize: "0.75rem", textTransform: "capitalize",
+        whiteSpace: "nowrap",
+      }}>
+        {normalized.replace("_", " ")}
+      </Box>
+    );
+  };
+
+  const filterSelectSx = {
+    borderRadius: "8px",
+    bgcolor: "#fff",
+    fontSize: "0.78rem",
+    fontWeight: "500",
+    color: "#333",
+    "& .MuiSelect-select": { py: 0.75, pl: 1.5, pr: "32px !important" },
+    "& .MuiOutlinedInput-notchedOutline": { borderColor: "#e5e7eb" },
+    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#d1d5db" },
+    "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#9ca3af", borderWidth: "1px" }
   };
 
   return (
     <>
-      <Card sx={{ borderRadius: 4, boxShadow: "none", border: "1px solid #f0f0f0" }}>
-        <Box p={3}>
-          <Typography variant="h6" fontWeight="700">
+      <Card sx={{ borderRadius: "16px", boxShadow: "0px 1px 3px rgba(0,0,0,0.05)", border: "1px solid #f3f4f6", bgcolor: "#fff" }}>
+        
+        {/* Unified Card Header Block */}
+        <Box p={3} display="flex" flexDirection={{ xs: "column", md: "row" }} gap={2} justifyContent="space-between" alignItems={{ xs: "flex-start", md: "center" }}>
+          <Typography variant="subtitle1" fontWeight="700" sx={{ color: "#111827", fontSize: "0.95rem" }}>
             {title || "All Submissions"}
           </Typography>
+          
+          {/* Action Filter Block (Conditionally renders if props are available) */}
+          {filterState && (
+            <Box display="flex" flexWrap="wrap" alignItems="center" gap={1} width={{ xs: "100%", md: "auto" }}>
+              <Select 
+                value={typeFilter} 
+                onChange={(e) => setTypeFilter?.(e.target.value)}
+                IconComponent={KeyboardArrowDownRounded}
+                sx={filterSelectSx}
+              >
+                <MenuItem value="All Types">All Types</MenuItem>
+                <MenuItem value="Individual">Individual</MenuItem>
+                <MenuItem value="Business">Business</MenuItem>
+                <MenuItem value="Enterprise">Enterprise</MenuItem>
+              </Select>
+
+              <Select 
+                value={statusFilter} 
+                onChange={(e) => setStatusFilter?.(e.target.value)}
+                IconComponent={KeyboardArrowDownRounded}
+                sx={filterSelectSx}
+              >
+                <MenuItem value="All Status">All Status</MenuItem>
+                <MenuItem value="Pending">Pending</MenuItem>
+                <MenuItem value="Under Review">Under Review</MenuItem>
+                <MenuItem value="Approved">Approved</MenuItem>
+                <MenuItem value="Rejected">Rejected</MenuItem>
+              </Select>
+
+              <Select 
+                value={riskFilter} 
+                onChange={(e) => setRiskFilter?.(e.target.value)}
+                IconComponent={KeyboardArrowDownRounded}
+                sx={filterSelectSx}
+              >
+                <MenuItem value="All Risk">All Risk</MenuItem>
+                <MenuItem value="Low Risk">Low Risk (&lt;40)</MenuItem>
+                <MenuItem value="Medium Risk">Medium Risk (40-74)</MenuItem>
+                <MenuItem value="High Risk">High Risk (&ge;75)</MenuItem>
+              </Select>
+
+              <Box sx={{
+                display: "inline-flex", alignItems: "center", gap: 0.5, 
+                border: "1px solid #e5e7eb", borderRadius: "8px", px: 1.5, py: 0.75, 
+                cursor: "pointer", fontSize: "0.78rem", fontWeight: "600", color: "#374151",
+                transition: "0.2s", "&:hover": { bgcolor: "#f9fafb" }
+              }}>
+                <FileDownloadOutlined sx={{ fontSize: 16, color: "#ef4444" }} />
+                <Typography onClick={() => exportCSV(submissions)} sx={{ color: "#ef4444" }}>
+                  Export CSV
+                </Typography>
+              </Box>
+            </Box>
+          )}
         </Box>
 
-        <TableContainer>
+        {/* ── DESKTOP & TABLET VIEW ── */}
+        <TableContainer sx={{ display: { xs: "none", sm: "block" }, width: "100%" }}>
           <Table>
-            <TableHead sx={{ backgroundColor: "#fafafa" }}>
-              <TableRow>
-                <TableCell sx={{ fontWeight: "600", color: "#888", fontSize: "0.75rem" }}>APPLICANT</TableCell>
-                <TableCell sx={{ fontWeight: "600", color: "#888", fontSize: "0.75rem" }}>TYPE</TableCell>
-                <TableCell sx={{ fontWeight: "600", color: "#888", fontSize: "0.75rem" }}>REF NO</TableCell>
-                <TableCell sx={{ fontWeight: "600", color: "#888", fontSize: "0.75rem" }}>
-                  {isApprovedPage ? "APPROVED DATE" : "SUBMITTED"}
-                </TableCell>
-                <TableCell sx={{ fontWeight: "600", color: "#888", fontSize: "0.75rem" }}>RISK SCORE</TableCell>
-                <TableCell sx={{ fontWeight: "600", color: "#888", fontSize: "0.75rem" }}>STATUS</TableCell>
-                <TableCell align="center" sx={{ fontWeight: "600", color: "#888", fontSize: "0.75rem" }}>ACTIONS</TableCell>
+            <TableHead>
+              <TableRow sx={{ borderBottom: "1px solid #f3f4f6" }}>
+                <TableCell sx={{ fontWeight: "600", color: "#9ca3af", fontSize: "0.72rem", letterSpacing: "0.05em", py: 1.5 }}>APPLICANT</TableCell>
+                <TableCell sx={{ fontWeight: "600", color: "#9ca3af", fontSize: "0.72rem", letterSpacing: "0.05em", py: 1.5 }}>TYPE</TableCell>
+                <TableCell sx={{ fontWeight: "600", color: "#9ca3af", fontSize: "0.72rem", letterSpacing: "0.05em", py: 1.5 }}>REF NO</TableCell>
+                <TableCell sx={{ fontWeight: "600", color: "#9ca3af", fontSize: "0.72rem", letterSpacing: "0.05em", py: 1.5 }}>SUBMITTED</TableCell>
+                <TableCell sx={{ fontWeight: "600", color: "#9ca3af", fontSize: "0.72rem", letterSpacing: "0.05em", py: 1.5 }}>RISK SCORE</TableCell>
+                <TableCell sx={{ fontWeight: "600", color: "#9ca3af", fontSize: "0.72rem", letterSpacing: "0.05em", py: 1.5 }}>STATUS</TableCell>
+                <TableCell align="center" sx={{ fontWeight: "600", color: "#9ca3af", fontSize: "0.72rem", letterSpacing: "0.05em", py: 1.5 }}>ACTIONS</TableCell>
               </TableRow>
             </TableHead>
 
             <TableBody>
-              {submissions.map((item) => {
-                const statusStyle = {
-                  approved:     { color: "#2e7d32", bg: "#e8f5e9" },
-                  rejected:     { color: "#c62828", bg: "#ffebee" },
-                  submitted:    { color: "#b45309", bg: "#fef3c7" },
-                  under_review: { color: "#0277bd", bg: "#e1f5fe" },
-                }[item.status] || { color: "#757575", bg: "#f5f5f5" };
-
-                return (
-                  <TableRow
-                    key={item._id || item.id || item.email}
-                    hover
-                    onClick={() => openDrawer(item)}
-                    sx={{ cursor: "pointer" }}
-                  >
-                    {/* Applicant */}
-                    <TableCell>
-                      <Box display="flex" alignItems="center" gap={1.5}>
-                        <Avatar sx={{
-                          bgcolor: item.avatarColor || "#9c27b0",
-                          width: 32, height: 32, fontSize: "0.8rem",
-                        }}>
-                          {(item.firstName?.[0] || item.name?.[0] || "?")}
-                          {(item.lastName?.[0] || "")}
-                        </Avatar>
-                        <Box>
-                          <Typography variant="body2" fontWeight="600" sx={{ lineHeight: 1.2 }}>
-                            {item.firstName
-                              ? `${item.firstName} ${item.lastName || ""}`
-                              : item.name || "Unknown"}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {item.email}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </TableCell>
-
-                    {/* Type */}
-                    <TableCell>
-                      <TypeChip type={item.accountType || item.type} />
-                    </TableCell>
-
-                    {/* Ref No */}
-                    <TableCell>
-                      <Typography variant="caption" sx={{
-                        bgcolor: "#f5f5f5", px: 1, py: 0.5,
-                        borderRadius: 1, fontWeight: "500",
-                        border: "1px solid #e0e0e0", fontFamily: "monospace",
-                      }}>
-                        {item._id
-                          ? `REF-${item._id.toString().slice(-5).toUpperCase()}`
-                          : item.ref || "—"}
-                      </Typography>
-                    </TableCell>
-
-                    {/* Submitted date */}
-                    <TableCell sx={{ fontSize: "0.85rem", color: "#444" }}>
-                      {item.submittedAt
-                        ? new Date(item.submittedAt).toLocaleDateString("en-GB", {
-                            day: "2-digit", month: "short", year: "numeric" })
-                        : item.submitted || "—"}
-                    </TableCell>
-
-                    {/* Risk Score */}
-                    <TableCell width="140px">
-                      <Box display="flex" alignItems="center" gap={1}>
-                        <LinearProgress
-                          variant="determinate"
-                          value={item.riskScore || 0}
-                          sx={{
-                            flexGrow: 1, height: 4, borderRadius: 2, bgcolor: "#eee",
-                            "& .MuiLinearProgress-bar": {
-                              backgroundColor: getRiskColor(item.riskScore),
-                            },
-                          }}
-                        />
-                        <Typography variant="caption" fontWeight="bold"
-                          sx={{ color: getRiskColor(item.riskScore), minWidth: 20 }}>
-                          {item.riskScore || 0}
+              {submissions.map((item) => (
+                <TableRow
+                  key={item._id || item.id || item.email}
+                  onClick={() => openDrawer(item)}
+                  sx={{ 
+                    cursor: "pointer", 
+                    "&:hover": { bgcolor: "#f9fafb" },
+                    "& td": { borderBottom: "1px solid #f3f4f6", py: 2 } 
+                  }}
+                >
+                  <TableCell>
+                    <Box display="flex" alignItems="center" gap={1.5}>
+                      <Avatar sx={{ bgcolor: item.avatarColor || "#2563eb", width: 32, height: 32, fontSize: "0.78rem", fontWeight: "700" }}>
+                        {(item.firstName?.[0] || item.name?.[0] || "?")}
+                        {(item.lastName?.[0] || "")}
+                      </Avatar>
+                      <Box>
+                        <Typography variant="body2" fontWeight="600" sx={{ color: "#111827", lineHeight: 1.2 }}>
+                          {item.firstName ? `${item.firstName} ${item.lastName || ""}` : item.name || "Unknown"}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: "#6b7280", display: "block", mt: 0.25 }}>
+                          {item.email}
                         </Typography>
                       </Box>
-                    </TableCell>
+                    </Box>
+                  </TableCell>
 
-                    {/* Status */}
-                    <TableCell>
-                      <Box sx={{
-                        display: "inline-flex", px: 1.5, py: 0.5,
-                        borderRadius: 1, bgcolor: statusStyle.bg,
-                        color: statusStyle.color, fontWeight: 700,
-                        fontSize: "0.72rem", textTransform: "capitalize",
-                        whiteSpace: "nowrap",
-                      }}>
-                        {(item.status || "submitted").replace("_", " ")}
-                      </Box>
-                    </TableCell>
+                  <TableCell>
+                    <TypeChip type={item.accountType || item.type} />
+                  </TableCell>
 
-                    {/* Actions */}
-                    <TableCell align="center" onClick={(e) => e.stopPropagation()}>
-                      <Box display="flex" alignItems="center" justifyContent="center" gap={0.5}>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          onClick={(e) => { e.stopPropagation(); openDrawer(item); }}
-                          sx={{
-                            textTransform: "none", borderRadius: "8px",
-                            borderColor: "#e0e0e0", color: "#333",
-                            fontSize: "0.75rem", fontWeight: "600", px: 2,
-                          }}
-                        >
-                          View
-                        </Button>
+                  <TableCell>
+                    <Typography variant="caption" sx={{
+                      bgcolor: "#f9fafb", px: 1, py: 0.5, borderRadius: "6px", fontWeight: "600",
+                      border: "1px solid #e5e7eb", fontFamily: "monospace", color: "#374151"
+                    }}>
+                      {item._id ? `REF-${item._id.toString().slice(-5).toUpperCase()}` : item.ref || "—"}
+                    </Typography>
+                  </TableCell>
 
-                        <IconButton
-                          size="small"
-                          onClick={(e) => openMenu(e, item)}
-                          sx={{ color: "#888" }}
-                        >
-                          <MoreVertRounded fontSize="small" />
-                        </IconButton>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+                  <TableCell sx={{ fontSize: "0.8rem", color: "#111827", fontWeight: "500" }}>
+                    {item.submittedAt
+                      ? new Date(item.submittedAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+                      : item.submitted || "—"}
+                  </TableCell>
+
+                  <TableCell width="150px">
+                    <Box display="flex" alignItems="center" gap={1.5}>
+                      <LinearProgress
+                        variant="determinate"
+                        value={item.riskScore || 0}
+                        sx={{
+                          flexGrow: 1, height: 5, borderRadius: 2, bgcolor: "#f3f4f6",
+                          "& .MuiLinearProgress-bar": { backgroundColor: getRiskColor(item.riskScore) },
+                        }}
+                      />
+                      <Typography variant="caption" fontWeight="700" sx={{ color: getRiskColor(item.riskScore), minWidth: 16 }}>
+                        {item.riskScore || 0}
+                      </Typography>
+                    </Box>
+                  </TableCell>
+
+                  <TableCell>
+                    {renderStatus(item.status)}
+                  </TableCell>
+
+                  <TableCell align="center" onClick={(e) => e.stopPropagation()}>
+                    <IconButton size="small" onClick={(e) => openMenu(e, item)} sx={{ border: "1px solid #e5e7eb", borderRadius: "8px", p: 0.5, color: "#6b7280" }}>
+                      <MoreHorizRounded fontSize="small" />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </TableContainer>
+
+        {/* ── MOBILE VIEW ── */}
+        <Box sx={{ display: { xs: "block", sm: "none" } }}>
+          {submissions.map((item, index) => (
+            <Box 
+              key={item._id || item.id || item.email}
+              onClick={() => openDrawer(item)}
+              sx={{ p: 2.5, cursor: "pointer", "&:hover": { bgcolor: "#f9fafb" }, borderBottom: index !== submissions.length - 1 ? "1px solid #f3f4f6" : "none" }}
+            >
+              {/* Profile details */}
+              <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
+                <Box display="flex" alignItems="center" gap={1.5}>
+                  <Avatar sx={{ bgcolor: item.avatarColor || "#2563eb", width: 36, height: 36, fontSize: "0.85rem", fontWeight: "700" }}>
+                    {(item.firstName?.[0] || item.name?.[0] || "?")}
+                    {(item.lastName?.[0] || "")}
+                  </Avatar>
+                  <Box>
+                    <Typography variant="body2" fontWeight="600" sx={{ color: "#111827" }}>
+                      {item.firstName ? `${item.firstName} ${item.lastName || ""}` : item.name || "Unknown"}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "#6b7280" }}>
+                      {item.email}
+                    </Typography>
+                  </Box>
+                </Box>
+                <IconButton size="small" onClick={(e) => openMenu(e, item)} sx={{ border: "1px solid #e5e7eb", borderRadius: "8px", p: 0.5 }}>
+                  <MoreHorizRounded fontSize="small" />
+                </IconButton>
+              </Box>
+
+              <Box display="flex" flexWrap="wrap" gap={1} mb={2}>
+                <TypeChip type={item.accountType || item.type} />
+                {renderStatus(item.status)}
+              </Box>
+
+              <Box sx={{ bgcolor: "#f9fafb", borderRadius: "12px", p: 1.5, display: "flex", flexDirection: "column", gap: 1.25, border: "1px solid #f3f4f6" }}>
+                <Box display="flex" justifyContent="space-between" alignItems="center">
+                  <Box display="flex" alignItems="center" gap={0.5} color="#6b7280">
+                    <FingerprintRounded sx={{ fontSize: 14 }} />
+                    <Typography variant="caption" fontWeight="500">Ref No</Typography>
+                  </Box>
+                  <Typography variant="caption" sx={{ fontFamily: "monospace", fontWeight: "600", color: "#374151" }}>
+                    {item._id ? `REF-${item._id.toString().slice(-5).toUpperCase()}` : item.ref || "—"}
+                  </Typography>
+                </Box>
+
+                <Box display="flex" justifyContent="space-between" alignItems="center">
+                  <Box display="flex" alignItems="center" gap={0.5} color="#6b7280">
+                    <CalendarTodayRounded sx={{ fontSize: 14 }} />
+                    <Typography variant="caption" fontWeight="500">Submitted</Typography>
+                  </Box>
+                  <Typography variant="caption" fontWeight="600" sx={{ color: "#374151" }}>
+                    {item.submittedAt
+                      ? new Date(item.submittedAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+                      : item.submitted || "—"}
+                  </Typography>
+                </Box>
+
+                <Box display="flex" justifyContent="space-between" alignItems="center">
+                  <Box display="flex" alignItems="center" gap={0.5} color="#6b7280">
+                    <AssessmentRounded sx={{ fontSize: 14 }} />
+                    <Typography variant="caption" fontWeight="500">Risk Score</Typography>
+                  </Box>
+                  <Box display="flex" alignItems="center" gap={1} width="45%">
+                    <LinearProgress
+                      variant="determinate"
+                      value={item.riskScore || 0}
+                      sx={{
+                        flexGrow: 1, height: 4, borderRadius: 2, bgcolor: "#e5e7eb",
+                        "& .MuiLinearProgress-bar": { backgroundColor: getRiskColor(item.riskScore) },
+                      }}
+                    />
+                    <Typography variant="caption" fontWeight="700" sx={{ color: getRiskColor(item.riskScore) }}>
+                      {item.riskScore || 0}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+            </Box>
+          ))}
+        </Box>
       </Card>
 
-      {/* ── Action Menu ─────────────────────────────────────────────────────── */}
+      {/* Action Popover Menu */}
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={closeMenu}
-        PaperProps={{ sx: { borderRadius: 2, boxShadow: "0 4px 20px rgba(0,0,0,0.12)", minWidth: 160 } }}
+        PaperProps={{ sx: { borderRadius: "12px", boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)", minWidth: 170, border: "1px solid #f3f4f6" } }}
       >
-        <MenuItem onClick={() => { openDrawer(menuRow); }}>
+        <MenuItem onClick={() => openDrawer(menuRow)}>
           <ListItemIcon><VisibilityRounded fontSize="small" /></ListItemIcon>
-          <ListItemText primaryTypographyProps={{ fontSize: 14 }}>View Details</ListItemText>
+          <ListItemText primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }}>View Details</ListItemText>
         </MenuItem>
-
-        <MenuItem onClick={() => handleMenuAction("approved")}
-          disabled={menuRow?.status === "approved"}>
+        <MenuItem onClick={() => handleMenuAction("approved")} disabled={menuRow?.status === "approved"}>
           <ListItemIcon><CheckCircleRounded fontSize="small" sx={{ color: "#10b981" }} /></ListItemIcon>
-          <ListItemText primaryTypographyProps={{ fontSize: 14 }}>✅ Approve</ListItemText>
+          <ListItemText primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }}>Approve</ListItemText>
         </MenuItem>
-
-        <MenuItem onClick={() => handleMenuAction("under_review")}
-          disabled={menuRow?.status === "under_review"}>
-          <ListItemIcon><ManageSearchRounded fontSize="small" sx={{ color: "#f59e0b" }} /></ListItemIcon>
-          <ListItemText primaryTypographyProps={{ fontSize: 14 }}>🔍 Flag Review</ListItemText>
+        <MenuItem onClick={() => handleMenuAction("under_review")} disabled={menuRow?.status === "under_review" || menuRow?.status === "under review"}>
+          <ListItemIcon><ManageSearchRounded fontSize="small" sx={{ color: "#2563eb" }} /></ListItemIcon>
+          <ListItemText primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }}>Flag Review</ListItemText>
         </MenuItem>
-
-        <MenuItem onClick={() => handleMenuAction("rejected")}
-          disabled={menuRow?.status === "rejected"}
-          sx={{ color: "#ef4444" }}>
+        <MenuItem onClick={() => handleMenuAction("rejected")} disabled={menuRow?.status === "rejected"} sx={{ color: "#ef4444" }}>
           <ListItemIcon><CancelRounded fontSize="small" sx={{ color: "#ef4444" }} /></ListItemIcon>
-          <ListItemText primaryTypographyProps={{ fontSize: 14, color: "#ef4444" }}>✗ Reject</ListItemText>
+          <ListItemText primaryTypographyProps={{ fontSize: 13, fontWeight: 500 }}>Reject</ListItemText>
         </MenuItem>
       </Menu>
 
-      {/* ── Side Drawer ──────────────────────────────────────────────────────── */}
-      <SubmissionDrawer
-        open={drawerOpen}
-        onClose={handleDrawerClose}
-        submission={selectedRow}
-      />
+      <SubmissionDrawer open={drawerOpen} onClose={handleDrawerClose} submission={selectedRow} />
     </>
   );
 }
