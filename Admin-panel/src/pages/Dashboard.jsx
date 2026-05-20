@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-
 import { Grid, Box } from "@mui/material";
-
 import {
   Assignment,
   PendingActions,
@@ -18,39 +16,27 @@ import RecentSubmissions from "../components/dashboard/RecentSubmissions";
 import { getDashboardStats } from "../services/dashboardService";
 
 export default function Dashboard() {
-
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
-
     const fetchStats = async () => {
-
       try {
-
         const data = await getDashboardStats();
-
         console.log("Dashboard Stats:", data);
-
         setStats(data);
-
       } catch (error) {
-
         console.error(error);
-
       }
-
     };
-
     fetchStats();
-
   }, []);
 
   return (
-    <Box sx={{ width: "100%" }}>
+    // 1. Added clean global page padding (24px) to separate everything from the sidebar/navbar edges
+    <Box sx={{ width: "100%", p: { xs: 2, sm: 3 }, bgcolor: "#f9fafb", minHeight: "100vh" }}>
 
-      {/* Stat Cards */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-
+      {/* Stat Cards Row */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} lg={3}>
           <StatCard
             title="Total Submissions"
@@ -90,12 +76,10 @@ export default function Dashboard() {
             icon={<Warning />}
           />
         </Grid>
-
       </Grid>
 
-      {/* Charts */}
-      <Grid container spacing={2}>
-
+      {/* Charts Row */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} lg={6}>
           <SubmissionChart chartData={stats?.chartData || []} />
         </Grid>
@@ -103,12 +87,11 @@ export default function Dashboard() {
         <Grid item xs={12} lg={6}>
           <AccountTypeChart byType={stats?.byType || {}} />
         </Grid>
-
       </Grid>
 
-      {/* Bottom */}
-      <Grid container>
-
+      {/* Bottom Visualization & Data Grids Row */}
+      {/* 2. Added spacing={3} here so stacked charts don't crash into each other on smaller viewports */}
+      <Grid container spacing={4}>
         <Grid item xs={12}>
           <RiskDistribution />
         </Grid>
@@ -116,7 +99,6 @@ export default function Dashboard() {
         <Grid item xs={12}>
           <RecentSubmissions />
         </Grid>
-
       </Grid>
 
     </Box>
