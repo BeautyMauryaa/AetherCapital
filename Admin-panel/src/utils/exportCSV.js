@@ -1,5 +1,3 @@
-import { saveAs } from "file-saver";
-
 export default function exportCSV(filteredSubmissions) {
 
   const headers = [
@@ -29,10 +27,7 @@ export default function exportCSV(filteredSubmissions) {
 
   ]);
 
-  const csvContent = [
-    headers,
-    ...rows,
-  ]
+  const csvContent = [headers, ...rows]
     .map((e) => e.join(","))
     .join("\n");
 
@@ -41,5 +36,20 @@ export default function exportCSV(filteredSubmissions) {
     { type: "text/csv;charset=utf-8;" }
   );
 
-  saveAs(blob, "submissions.csv");
+  const url = window.URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+
+  link.href = url;
+
+  link.setAttribute(
+    "download",
+    "submissions.csv"
+  );
+
+  document.body.appendChild(link);
+
+  link.click();
+
+  document.body.removeChild(link);
 }
