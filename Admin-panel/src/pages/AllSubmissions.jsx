@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import SubmissionTable from "../components/tables/SubmissionTable";
 import { getSubmissions } from "../services/submissionService";
-import { saveAs } from "file-saver";
+
 
 export default function AllSubmissions() {
   const [submissions, setSubmissions] = useState([]);
