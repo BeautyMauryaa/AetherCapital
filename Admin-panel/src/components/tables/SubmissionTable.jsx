@@ -7,16 +7,13 @@ import {
 } from "@mui/material";
 import {
   MoreHorizRounded, VisibilityRounded, CheckCircleRounded,
-  CancelRounded, ManageSearchRounded, CalendarTodayRounded,
-  FingerprintRounded, AssessmentRounded, FileDownloadOutlined,
+  CancelRounded, ManageSearchRounded, FileDownloadOutlined,
   KeyboardArrowDownRounded
 } from "@mui/icons-material";
 import TypeChip from "../common/TypeChip";
 import SubmissionDrawer from "../common/SubmissionDrawer";
 import { useAdminStore } from "../../store/adminStore";
 import exportCSV from "../../utils/exportCSV";
-
-
 
 export default function SubmissionTable({ submissions, title, isApprovedPage, filterState }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -26,7 +23,6 @@ export default function SubmissionTable({ submissions, title, isApprovedPage, fi
 
   const updateStatus = useAdminStore((s) => s.updateStatus);
 
-  // Destructure parent filters safely with fallbacks
   const {
     typeFilter = "All Types", setTypeFilter,
     statusFilter = "All Status", setStatusFilter,
@@ -109,7 +105,6 @@ export default function SubmissionTable({ submissions, title, isApprovedPage, fi
             {title || "All Submissions"}
           </Typography>
           
-          {/* Action Filter Block (Conditionally renders if props are available) */}
           {filterState && (
             <Box display="flex" flexWrap="wrap" alignItems="center" gap={1} width={{ xs: "100%", md: "auto" }}>
               <Select 
@@ -164,9 +159,9 @@ export default function SubmissionTable({ submissions, title, isApprovedPage, fi
           )}
         </Box>
 
-        {/* ── DESKTOP & TABLET VIEW ── */}
-        <TableContainer sx={{ display: { xs: "none", sm: "block" }, width: "100%" }}>
-          <Table>
+        {/* ── UNIFIED TABLE VIEW WITH HORIZONTAL SCROLL FOR MOBILE ── */}
+        <TableContainer sx={{ width: "100%", overflowX: "auto" }}>
+          <Table sx={{ minWidth: 650 }}>
             <TableHead>
               <TableRow sx={{ borderBottom: "1px solid #f3f4f6" }}>
                 <TableCell sx={{ fontWeight: "600", color: "#9ca3af", fontSize: "0.72rem", letterSpacing: "0.05em", py: 1.5 }}>APPLICANT</TableCell>
@@ -256,87 +251,6 @@ export default function SubmissionTable({ submissions, title, isApprovedPage, fi
             </TableBody>
           </Table>
         </TableContainer>
-
-        {/* ── MOBILE VIEW ── */}
-        <Box sx={{ display: { xs: "block", sm: "none" } }}>
-          {submissions.map((item, index) => (
-            <Box 
-              key={item._id || item.id || item.email}
-              onClick={() => openDrawer(item)}
-              sx={{ p: 2.5, cursor: "pointer", "&:hover": { bgcolor: "#f9fafb" }, borderBottom: index !== submissions.length - 1 ? "1px solid #f3f4f6" : "none" }}
-            >
-              {/* Profile details */}
-              <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
-                <Box display="flex" alignItems="center" gap={1.5}>
-                  <Avatar sx={{ bgcolor: item.avatarColor || "#2563eb", width: 36, height: 36, fontSize: "0.85rem", fontWeight: "700" }}>
-                    {(item.firstName?.[0] || item.name?.[0] || "?")}
-                    {(item.lastName?.[0] || "")}
-                  </Avatar>
-                  <Box>
-                    <Typography variant="body2" fontWeight="600" sx={{ color: "#111827" }}>
-                      {item.firstName ? `${item.firstName} ${item.lastName || ""}` : item.name || "Unknown"}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: "#6b7280" }}>
-                      {item.email}
-                    </Typography>
-                  </Box>
-                </Box>
-                <IconButton size="small" onClick={(e) => openMenu(e, item)} sx={{ border: "1px solid #e5e7eb", borderRadius: "8px", p: 0.5 }}>
-                  <MoreHorizRounded fontSize="small" />
-                </IconButton>
-              </Box>
-
-              <Box display="flex" flexWrap="wrap" gap={1} mb={2}>
-                <TypeChip type={item.accountType || item.type} />
-                {renderStatus(item.status)}
-              </Box>
-
-              <Box sx={{ bgcolor: "#f9fafb", borderRadius: "12px", p: 1.5, display: "flex", flexDirection: "column", gap: 1.25, border: "1px solid #f3f4f6" }}>
-                <Box display="flex" justifyContent="space-between" alignItems="center">
-                  <Box display="flex" alignItems="center" gap={0.5} color="#6b7280">
-                    <FingerprintRounded sx={{ fontSize: 14 }} />
-                    <Typography variant="caption" fontWeight="500">Ref No</Typography>
-                  </Box>
-                  <Typography variant="caption" sx={{ fontFamily: "monospace", fontWeight: "600", color: "#374151" }}>
-                    {item._id ? `REF-${item._id.toString().slice(-5).toUpperCase()}` : item.ref || "—"}
-                  </Typography>
-                </Box>
-
-                <Box display="flex" justifyContent="space-between" alignItems="center">
-                  <Box display="flex" alignItems="center" gap={0.5} color="#6b7280">
-                    <CalendarTodayRounded sx={{ fontSize: 14 }} />
-                    <Typography variant="caption" fontWeight="500">Submitted</Typography>
-                  </Box>
-                  <Typography variant="caption" fontWeight="600" sx={{ color: "#374151" }}>
-                    {item.submittedAt
-                      ? new Date(item.submittedAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
-                      : item.submitted || "—"}
-                  </Typography>
-                </Box>
-
-                <Box display="flex" justifyContent="space-between" alignItems="center">
-                  <Box display="flex" alignItems="center" gap={0.5} color="#6b7280">
-                    <AssessmentRounded sx={{ fontSize: 14 }} />
-                    <Typography variant="caption" fontWeight="500">Risk Score</Typography>
-                  </Box>
-                  <Box display="flex" alignItems="center" gap={1} width="45%">
-                    <LinearProgress
-                      variant="determinate"
-                      value={item.riskScore || 0}
-                      sx={{
-                        flexGrow: 1, height: 4, borderRadius: 2, bgcolor: "#e5e7eb",
-                        "& .MuiLinearProgress-bar": { backgroundColor: getRiskColor(item.riskScore) },
-                      }}
-                    />
-                    <Typography variant="caption" fontWeight="700" sx={{ color: getRiskColor(item.riskScore) }}>
-                      {item.riskScore || 0}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Box>
-            </Box>
-          ))}
-        </Box>
       </Card>
 
       {/* Action Popover Menu */}
