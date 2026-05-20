@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import API from "../services/api.js";
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://aethercapital.onrender.com/api';
 
 export const useAdminStore = create((set, get) => ({
   submissions:  [],
@@ -14,12 +14,11 @@ export const useAdminStore = create((set, get) => ({
   // ── Search ────────────────────────────────────────────────────────────────
   setSearch: (q) => {
     set({ searchQuery: q });
-    // Debounced fetch handled in component; just store value here
   },
 
   setSelected: (s) => set({ selectedSubmission: s }),
 
-  // ── Fetch all submissions ─────────────────────────────────────────────────
+  // ── Fetch all submissions 
   fetchSubmissions: async (params = {}) => {
     set({ loading: true, error: null });
     try {
