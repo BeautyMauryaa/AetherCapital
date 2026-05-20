@@ -25,6 +25,7 @@ app.use(
       "http://localhost:5173",
       "http://localhost:5174",
       "https://aether-admin-panel.onrender.com",
+        "https://aethercapital3.onrender.com",
     ],
 
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
