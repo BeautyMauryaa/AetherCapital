@@ -80,7 +80,7 @@ export default function Dashboard() {
       {/* Charts Row */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} lg={6}>
-          <SubmissionChart submissions={stats?.submissions || stats?.recentSubmissions || []} />
+         <SubmissionChart chartData={stats?.chartData || []} />
         </Grid>
 
         <Grid item xs={12} lg={6}>
