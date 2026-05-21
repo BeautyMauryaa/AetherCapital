@@ -95,7 +95,19 @@ idBack: {
     default: "pending",
   },
 },
-  documents:    [DriveFileSchema],
+documents: [
+  {
+    type: String,
+
+    file: DriveFileSchema,
+
+    status: {
+      type: String,
+      enum: ["pending", "verified", "rejected"],
+      default: "pending",
+    },
+  },
+],
   signature: {
     driveFile: DriveFileSchema,
     signedAt:  Date,
