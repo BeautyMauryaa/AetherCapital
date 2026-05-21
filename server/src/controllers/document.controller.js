@@ -22,10 +22,10 @@ export const getAllDocuments = asyncHandler(async (req, res) => {
       if (url) processedUrls.add(url.toLowerCase());
     };
 
-    // Populate tracking set with known explicitly defined root-level assets
-    if (item.idFront?.file)   trackUrl(item.idFront.file);
-    if (item.idBack?.file)    trackUrl(item.idBack.file);
-    if (item.profileImage?.file) trackUrl(item.profileImage.file);
+    // // Populate tracking set with known explicitly defined root-level assets
+    // if (item.idFront?.file)   trackUrl(item.idFront.file);
+    // if (item.idBack?.file)    trackUrl(item.idBack.file);
+    // if (item.profileImage?.file) trackUrl(item.profileImage.file);
 
     // 1. ID FRONT
     if (item.idFront && item.idFront.file) {
