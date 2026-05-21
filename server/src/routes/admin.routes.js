@@ -18,6 +18,10 @@ router.get("/submissions", getAllSubmissions);
 // Single submission detail
 router.get("/submissions/:id", getSubmission);
 router.get("/documents", getAllDocuments);
+router.patch(
+  "/submissions/:id/document-status",
+  updateDocumentStatus
+);
 
 
 // Update status (approve / reject / under_review)
