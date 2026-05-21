@@ -10,6 +10,7 @@ import {
   LocationOnOutlined
 } from "@mui/icons-material";
 import { updateDocumentStatus } from "../../services/documentService";
+
 const getDocumentIcon = (title) => {
   const t = title?.toLowerCase() || "";
   if (t.includes("id") || t.includes("government")) {
@@ -38,63 +39,44 @@ export default function DocumentCard({
   status,
   file,
   submissionId,
-  documentType,
+  documentType, // <--- Destructured correctly here
   setToast,
   refreshDocuments,
-})  {
+}) {
   
   const currentStatus = status?.toLowerCase() || "pending";
   const style = STATUS_CHIP_STYLE[currentStatus] || STATUS_CHIP_STYLE.pending;
-const handleUpdate = async (
-  targetStatus,
-  successMessage,
-  errorMessage
-) => {
 
-  try {
+  const handleUpdate = async (targetStatus, successMessage, errorMessage) => {
+    try {
+      await updateDocumentStatus(
+        submissionId,
+        documentType, // <--- Fixed: Changed from fileType to documentType
+        targetStatus
+      );
 
-    await updateDocumentStatus(
-      submissionId,
-      fileType,
-      targetStatus
-    );
+      if (typeof setToast === "function") {
+        setToast({
+          open: true,
+          message: successMessage,
+          severity: "success"
+        });
+      }
 
-    setToast({
-      open: true,
-      message: successMessage,
-      severity: "success"
-    });
-
-    refreshDocuments();
-
-  } catch (error) {
-
-    console.error(error);
-
-    setToast({
-      open: true,
-      message: errorMessage,
-      severity: "error"
-    });
-
-  }
-
-};
-
-    refreshDocuments();
-
-  } catch (error) {
-
-    console.error(error);
-
-    setToast({
-      open: true,
-      message: errorMessage,
-      severity: "error"
-    });
-
-  }
-};
+      if (typeof refreshDocuments === "function") {
+        refreshDocuments();
+      }
+    } catch (error) {
+      console.error(error);
+      if (typeof setToast === "function") {
+        setToast({
+          open: true,
+          message: errorMessage,
+          severity: "error"
+        });
+      }
+    }
+  }; // <--- handleUpdate safely ends here now (stray fragment removed)
 
   return (
     <Card
@@ -122,6 +104,7 @@ const handleUpdate = async (
         <Typography sx={{ fontSize: 11, fontWeight: 500, color: "#94a3b8", mb: 1.5 }}>
           {user || "Unknown Applicant"}
         </Typography>
+        
         <Box
           sx={{
             display: "inline-block",
@@ -138,6 +121,7 @@ const handleUpdate = async (
           {style.text}
         </Box>
       </Box>
+      
       <Box sx={{ mt: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <IconButton
           component="a"
@@ -149,7 +133,7 @@ const handleUpdate = async (
             borderRadius: 2,
             p: 0.75,
             color: "#64748b",
-            "&:hover": { bgcolor: "#f8fafc" }
+            "& hover": { bgcolor: "#f8fafc" }
           }}
         >
           <ArrowDownwardRounded sx={{ fontSize: 16 }} />
@@ -164,7 +148,7 @@ const handleUpdate = async (
               color: "#ffffff",
               borderRadius: 2,
               p: 0.75,
-              "&:hover": { bgcolor: "#059669" }
+              "& hover": { bgcolor: "#059669" }
             }}
           >
             <CheckRounded sx={{ fontSize: 16 }} />
@@ -178,7 +162,7 @@ const handleUpdate = async (
               color: "#ffffff",
               borderRadius: 2,
               p: 0.75,
-              "&:hover": { bgcolor: "#dc2626" }
+              "& hover": { bgcolor: "#dc2626" }
             }}
           >
             <CloseRounded sx={{ fontSize: 16 }} />
