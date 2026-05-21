@@ -45,17 +45,17 @@ export default function DocumentCard({
   
   const currentStatus = status?.toLowerCase() || "pending";
   const style = STATUS_CHIP_STYLE[currentStatus] || STATUS_CHIP_STYLE.pending;
-
- const handleUpdate = async (
+const handleUpdate = async (
   targetStatus,
   successMessage,
   errorMessage
 ) => {
+
   try {
 
     await updateDocumentStatus(
       submissionId,
-      documentType,
+      fileType,
       targetStatus
     );
 
@@ -64,6 +64,22 @@ export default function DocumentCard({
       message: successMessage,
       severity: "success"
     });
+
+    refreshDocuments();
+
+  } catch (error) {
+
+    console.error(error);
+
+    setToast({
+      open: true,
+      message: errorMessage,
+      severity: "error"
+    });
+
+  }
+
+};
 
     refreshDocuments();
 
