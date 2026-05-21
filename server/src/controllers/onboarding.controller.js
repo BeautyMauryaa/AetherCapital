@@ -226,8 +226,15 @@ export const submitOnboarding = asyncHandler(async (req, res) => {
 
     // Drive files
     profileImage: driveUploads.profileImage,
-    idFront:      driveUploads.idFront,
-    idBack:       driveUploads.idBack,
+   idFront: {
+  file: driveUploads.idFront,
+  status: "pending",
+},
+
+idBack: {
+  file: driveUploads.idBack,
+  status: "pending",
+},
     documents:    driveUploads.documents || [],
     signature: driveUploads.signature
       ? { driveFile: driveUploads.signature, signedAt: new Date() }
