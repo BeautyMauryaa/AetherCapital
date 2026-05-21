@@ -117,36 +117,42 @@ export const getSubmission = asyncHandler(async (req, res) => {
 
 // ─── PATCH /api/admin/submissions/:id/document-status ────────────────────────
 export const updateDocumentStatus = asyncHandler(async (req, res) => {
+  const { id } = req.params;
   const { documentType, status } = req.body;
 
   const allowedStatuses = ["pending", "verified", "rejected"];
   if (!allowedStatuses.includes(status)) {
-    throw new ApiError(400, "Invalid document status");
+    throw new ApiError(400, "Invalid document status string value sent");
   }
 
-  const submission = await Onboarding.findById(req.params.id);
+  const submission = await Onboarding.findById(id);
   if (!submission) {
-    throw new ApiError(404, "Submission not found");
+    throw new ApiError(404, "Parent onboarding submission reference not found");
   }
 
-  // Handle nested sub-document dot notation paths (e.g., "documents.0")
+  // Route updates dynamically by structural type tokens
   if (documentType.includes(".")) {
-    const [arrayField, indexStr] = documentType.split(".");
-    const targetIndex = parseInt(indexStr, 10);
-
-    if (!submission[arrayField] || !submission[arrayField][targetIndex]) {
-      throw new ApiError(400, `Nested document path '${documentType}' does not exist`);
+    // Array nested handling block (e.g. "documents.65ef49a...")
+    const [arrayField, subDocId] = documentType.split(".");
+    
+    if (!submission[arrayField] || typeof submission[arrayField].id !== "function") {
+      throw new ApiError(400, `Target field '${arrayField}' is not a valid subdocument array`);
     }
 
-    submission[arrayField][targetIndex].status = status;
+    // Locate matching embedded entry safely inside MongoDB array
+    const targetSubDoc = submission[arrayField].id(subDocId);
+    if (!targetSubDoc) {
+      throw new ApiError(404, `Subdocument with database key ID [${subDocId}] not found`);
+    }
+
+    targetSubDoc.status = status;
     submission.markModified(arrayField);
   } else {
-    // Handle root-level custom object properties ("idFront", "idBack", "profileImage")
+    // Direct root property update logic ("idFront", "idBack", "profileImage")
     if (!submission[documentType]) {
-      throw new ApiError(400, `Document record structure for '${documentType}' is uninitialized`);
+      throw new ApiError(400, `Field property schema space '${documentType}' is completely uninitialized`);
     }
 
-    // Set the status safely handles nested object paths if field is an object shell
     if (typeof submission[documentType] === "object") {
       submission[documentType].status = status;
     } else {
@@ -158,7 +164,7 @@ export const updateDocumentStatus = asyncHandler(async (req, res) => {
   await submission.save();
 
   return res.status(200).json(
-    new ApiResponse(200, submission, "Document status updated successfully")
+    new ApiResponse(200, submission, "Document validation status updated successfully")
   );
 });
 
@@ -265,14 +271,14 @@ export const getAllDocuments = asyncHandler(async (req, res) => {
       item.companyName ||
       "Unknown";
 
-    // Track file keys to clean up overlapping entries
+    // Instantiated tracking logic to clear dashboard duplicate components
     const processedUrls = new Set();
     const getUrl = (val) => {
       if (!val) return null;
       return typeof val === "string" ? val : val.file || val.url;
     };
 
-    // ID FRONT
+    // 1. ID FRONT
     if (item.idFront) {
       const u = getUrl(item.idFront);
       if (u) processedUrls.add(u.toLowerCase());
@@ -287,7 +293,7 @@ export const getAllDocuments = asyncHandler(async (req, res) => {
       });
     }
 
-    // ID BACK
+    // 2. ID BACK
     if (item.idBack) {
       const u = getUrl(item.idBack);
       if (u) processedUrls.add(u.toLowerCase());
@@ -302,7 +308,7 @@ export const getAllDocuments = asyncHandler(async (req, res) => {
       });
     }
 
-    // PROFILE IMAGE
+    // 3. PROFILE IMAGE
     if (item.profileImage) {
       const u = getUrl(item.profileImage);
       if (u) processedUrls.add(u.toLowerCase());
@@ -317,13 +323,13 @@ export const getAllDocuments = asyncHandler(async (req, res) => {
       });
     }
 
-    // EXTRA DOCUMENTS
+    // 4. EXTRA DOCUMENTS (Deduplicated safely using Database ID tokens)
     if (item.documents?.length > 0) {
-      item.documents.forEach((doc, index) => {
+      item.documents.forEach((doc) => {
         const u = getUrl(doc);
         const titleLower = doc.type?.toLowerCase() || "";
 
-        // Deduplication boundary check
+        // Intercept duplicates caught inside array fallbacks
         if (
           (u && processedUrls.has(u.toLowerCase())) ||
           titleLower.includes("front") ||
@@ -334,7 +340,8 @@ export const getAllDocuments = asyncHandler(async (req, res) => {
 
         docs.push({
           submissionId: item._id,
-          documentType: `documents.${index}`,
+          // Bind directly to database _id token to eliminate mutation array position lag
+          documentType: `documents.${doc._id || doc.id}`,
           type: doc.type || "Document",
           applicant,
           status: doc.status || "pending",
@@ -345,6 +352,6 @@ export const getAllDocuments = asyncHandler(async (req, res) => {
   });
 
   return res.status(200).json(
-    new ApiResponse(200, docs, "Documents fetched")
+    new ApiResponse(200, docs, "Documents fetched without errors or duplicates")
   );
 });
