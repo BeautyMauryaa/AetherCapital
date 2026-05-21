@@ -59,61 +59,61 @@ const formatSubmission = (item) => ({
 
 // ─── GET /api/admin/submissions ───────────────────────────────────────────────
 
-export const updateDocumentStatus = asyncHandler(async (req, res) => {
-  const { documentType, status } = req.body;
+// export const updateDocumentStatus = asyncHandler(async (req, res) => {
+//   const { documentType, status } = req.body;
 
-  const allowedStatuses = ["pending", "verified", "rejected"];
-  if (!allowedStatuses.includes(status)) {
-    throw new ApiError(400, "Invalid document status");
-  }
+//   const allowedStatuses = ["pending", "verified", "rejected"];
+//   if (!allowedStatuses.includes(status)) {
+//     throw new ApiError(400, "Invalid document status");
+//   }
 
-  const submission = await Onboarding.findById(req.params.id);
-  if (!submission) {
-    throw new ApiError(404, "Submission not found");
-  }
+//   const submission = await Onboarding.findById(req.params.id);
+//   if (!submission) {
+//     throw new ApiError(404, "Submission not found");
+//   }
 
-  // 1. Map frontend UI string labels back to actual database schema properties
-  let schemaKey = null;
-  const normalizedType = documentType?.toLowerCase() || "";
+//   // 1. Map frontend UI string labels back to actual database schema properties
+//   let schemaKey = null;
+//   const normalizedType = documentType?.toLowerCase() || "";
 
-  if (normalizedType.includes("front")) {
-    schemaKey = "idFront";
-  } else if (normalizedType.includes("back")) {
-    schemaKey = "idBack";
-  }
+//   if (normalizedType.includes("front")) {
+//     schemaKey = "idFront";
+//   } else if (normalizedType.includes("back")) {
+//     schemaKey = "idBack";
+//   }
 
-  // 2. Handle sub-documents if it lives inside an array (e.g., item.documents)
-  if (!schemaKey) {
-    // If it's a supporting document inside your array, update it there
-    const docIndex = submission.documents?.findIndex(
-      (d) => d.type?.toLowerCase() === normalizedType || d.name?.toLowerCase() === normalizedType
-    );
+//   // 2. Handle sub-documents if it lives inside an array (e.g., item.documents)
+//   if (!schemaKey) {
+//     // If it's a supporting document inside your array, update it there
+//     const docIndex = submission.documents?.findIndex(
+//       (d) => d.type?.toLowerCase() === normalizedType || d.name?.toLowerCase() === normalizedType
+//     );
 
-    if (docIndex !== -1 && docIndex !== undefined) {
-      submission.documents[docIndex].status = status;
-    } else {
-      throw new ApiError(400, `Document structure match not found for: ${documentType}`);
-    }
-  } else {
-    // 3. Ensure the root document field object actually exists before setting status
-    if (!submission[schemaKey]) {
-      throw new ApiError(400, `Schema property '${schemaKey}' is uninitialized or missing data`);
-    }
+//     if (docIndex !== -1 && docIndex !== undefined) {
+//       submission.documents[docIndex].status = status;
+//     } else {
+//       throw new ApiError(400, `Document structure match not found for: ${documentType}`);
+//     }
+//   } else {
+//     // 3. Ensure the root document field object actually exists before setting status
+//     if (!submission[schemaKey]) {
+//       throw new ApiError(400, `Schema property '${schemaKey}' is uninitialized or missing data`);
+//     }
     
-    submission[schemaKey].status = status;
-  }
+//     submission[schemaKey].status = status;
+//   }
 
-  // Mark modified explicitly if updating deeply nested mixed properties
-  submission.markModified("idFront");
-  submission.markModified("idBack");
-  submission.markModified("documents");
+//   // Mark modified explicitly if updating deeply nested mixed properties
+//   submission.markModified("idFront");
+//   submission.markModified("idBack");
+//   submission.markModified("documents");
 
-  await submission.save();
+//   await submission.save();
 
-  return res.status(200).json(
-    new ApiResponse(200, submission, "Document status updated successfully")
-  );
-});
+//   return res.status(200).json(
+//     new ApiResponse(200, submission, "Document status updated successfully")
+//   );
+// });
 
 // ─── GET /api/admin/submissions/:id ──────────────────────────────────────────
 export const getSubmission = asyncHandler(async (req, res) => {
