@@ -6,34 +6,54 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 // ─── Helper: format submission for admin panel ────────────────────────────────
 const formatSubmission = (item) => ({
   _id: item._id,
+
+  // Basic
   firstName: item.firstName || item.companyName || item.legalName || "Unknown",
   middleName: item.middleName || "",
   lastName: item.lastName || "",
   email: item.email || "No Email",
+
+  // Account
   accountType: item.accountType || "individual",
   status: item.status || "submitted",
+
+  // Risk
   riskScore: item.riskScore || 0,
   riskLevel: item.riskLevel || "low",
+
+  // Dates
   submittedAt: item.submittedAt || item.createdAt,
   createdAt: item.createdAt,
   reviewedAt: item.reviewedAt || null,
+
+  // Personal
   gender: item.gender || "",
   nationality: item.nationality || "",
   dateOfBirth: item.dateOfBirth || null,
+
+  // Address
   address: item.address || {},
   mailingAddress: item.mailingAddress || {},
   sameAsPrimary: item.sameAsPrimary,
+
+  // Security
   roles: item.roles || [],
   departments: item.departments || [],
   permissions: item.permissions || {},
   twoFactorEnabled: item.twoFactorEnabled || false,
   twoFactorMethod: item.twoFactorMethod || "",
+
+  // Compliance
   questionnaire: item.questionnaire || [],
-  profileImage: item.profileImage || null,
-  idFront: item.idFront || null,
-  idBack: item.idBack || null,
-  documents: item.documents || [],
+
+  // Files (Aligned with your precise schema properties)
+  profileImage: item.profileImage || null, // Directly holds DriveFileSchema
+  idFront: item.idFront || null,           // Object wrapper with .file and .status
+  idBack: item.idBack || null,             // Object wrapper with .file and .status
+  documents: item.documents || [],         // Array of objects with .type, .file, .status
   signature: item.signature || null,
+
+  // Notes
   reviewNote: item.reviewNote || "",
 });
 
@@ -73,7 +93,7 @@ export const getAllSubmissions = asyncHandler(async (req, res) => {
       total,
       page:  Number(page),
       pages: Math.ceil(total / Number(limit)),
-    }, "Submissions fetched")
+    }, "Submissions fetched successfully")
   );
 });
 
@@ -82,11 +102,11 @@ export const getSubmission = asyncHandler(async (req, res) => {
   const doc = await Onboarding.findById(req.params.id).lean();
 
   if (!doc) {
-    throw new ApiError(404, "Submission not found");
+    throw new ApiError(404, "Submission record not found");
   }
 
   return res.status(200).json(
-    new ApiResponse(200, { submission: doc }, "Submission fetched")
+    new ApiResponse(200, { submission: doc }, "Submission fetched successfully")
   );
 });
 
@@ -97,7 +117,7 @@ export const updateStatus = asyncHandler(async (req, res) => {
 
   const allowed = ["submitted", "under_review", "approved", "rejected"];
   if (!allowed.includes(status)) {
-    throw new ApiError(400, `Invalid status. Must be one of: ${allowed.join(", ")}`);
+    throw new ApiError(400, `Invalid status code configuration selection. Use: ${allowed.join(", ")}`);
   }
 
   const doc = await Onboarding.findByIdAndUpdate(
@@ -110,10 +130,10 @@ export const updateStatus = asyncHandler(async (req, res) => {
     { new: true, runValidators: true }
   ).lean();
 
-  if (!doc) throw new ApiError(404, "Submission not found");
+  if (!doc) throw new ApiError(404, "Submission entry target not found");
 
   return res.status(200).json(
-    new ApiResponse(200, { submission: formatSubmission(doc) }, `Status updated to ${status}`)
+    new ApiResponse(200, { submission: formatSubmission(doc) }, `Status altered to ${status}`)
   );
 });
 
@@ -141,7 +161,6 @@ export const getStats = asyncHandler(async (req, res) => {
       .lean(),
   ]);
 
-  // Daily breakdown for chart (last 7 days)
   const dailyMap = {};
   for (let i = 6; i >= 0; i--) {
     const d = new Date();
@@ -159,7 +178,6 @@ export const getStats = asyncHandler(async (req, res) => {
     submissions,
   }));
 
-  // Account type breakdown
   const typeCounts = await Onboarding.aggregate([
     { $group: { _id: "$accountType", count: { $sum: 1 } } },
   ]);
@@ -178,6 +196,6 @@ export const getStats = asyncHandler(async (req, res) => {
       highRisk,
       chartData,
       byType,
-    }, "Stats fetched")
+    }, "Dashboard overview metrics loaded")
   );
 });
