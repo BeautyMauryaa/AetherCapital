@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import {
   AreaChart,
   Area,
@@ -17,51 +17,24 @@ import {
   alpha,
 } from "@mui/material";
 
-export default function SubmissionChart({ submissions = [] }) {
-  // 1. Manage state for the dropdown selector
-  const [daysRange, setDaysRange] = useState(30); // Defaulting to 30 as seen in your dashboard mockup
+export default function SubmissionChart({ chartData = [] }) {
+  const [daysRange, setDaysRange] = useState(7); // Matches your backend's default 7 days
 
-  // 2. Generate and bucket real data dynamically when submissions or daysRange changes
-  const computedChartData = useMemo(() => {
-    const today = new Date();
-    today.setHours(23, 59, 59, 999); // Align to end of today to prevent slicing time buckets weirdly
+  // Format backend dates (e.g., '2026-05-20') to short lookups (e.g., '20 May') for clean layout
+  const formattedChartData = chartData.map((item) => {
+    if (!item.day) return item;
+    
+    const parsedDate = new Date(item.day);
+    // Fallback if the date string fails parsing gracefully
+    const formattedLabel = isNaN(parsedDate) 
+      ? item.day 
+      : parsedDate.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 
-    // Pre-populate our empty time buckets for the selected range
-    const dataMap = Array.from({ length: daysRange }).map((_, i) => {
-      const targetDate = new Date();
-      targetDate.setDate(today.getDate() - (daysRange - 1 - i));
-      
-      // Match the localized XAxis label formatting (e.g., "22 Apr", "04 May")
-      const label = targetDate.toLocaleDateString("en-IN", {
-        day: "numeric",
-        month: "short",
-      });
-
-      return {
-        day: label, // Used by Recharts XAxis dataKey
-        rawDateStr: targetDate.toDateString(), // Reliable key for date-matching
-        submissions: 0,
-      };
-    });
-
-    // Populate actual counts from the submissions array
-    if (Array.isArray(submissions)) {
-      submissions.forEach((item) => {
-        const dateSource = item.createdAt || item.submittedAt;
-        if (!dateSource) return;
-
-        const itemDateStr = new Date(dateSource).toDateString();
-        
-        // Find the matching bucket day and increment it
-        const dayBucket = dataMap.find((bucket) => bucket.rawDateStr === itemDateStr);
-        if (dayBucket) {
-          dayBucket.submissions++;
-        }
-      });
-    }
-
-    return dataMap;
-  }, [submissions, daysRange]);
+    return {
+      ...item,
+      displayDay: formattedLabel, // The label Recharts will render on XAxis
+    };
+  });
 
   return (
     <Card
@@ -93,11 +66,11 @@ export default function SubmissionChart({ submissions = [] }) {
           </Typography>
         </Box>
 
-        {/* 3. Handle changing timeframes elegantly */}
         <Select
           value={daysRange}
           onChange={(e) => setDaysRange(Number(e.target.value))}
           size="small"
+          disabled // Temporary until you add backend filter logic for 30/90 ranges
           sx={{
             borderRadius: 2,
             fontSize: "0.75rem",
@@ -115,7 +88,7 @@ export default function SubmissionChart({ submissions = [] }) {
       <Box sx={{ width: "100%", height: 300 }}>
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
-            data={computedChartData}
+            data={formattedChartData}
             margin={{
               top: 10,
               right: 10,
@@ -137,7 +110,7 @@ export default function SubmissionChart({ submissions = [] }) {
             />
 
             <XAxis
-              dataKey="day"
+              dataKey="displayDay" // Maps directly to our nice looking formatted label
               axisLine={false}
               tickLine={false}
               tick={{
@@ -150,7 +123,7 @@ export default function SubmissionChart({ submissions = [] }) {
             <YAxis
               axisLine={false}
               tickLine={false}
-              allowDecimals={false} // Prevents fractional numbers on low-count charts
+              allowDecimals={false}
               tick={{
                 fontSize: 12,
                 fill: "#9ca3af",
@@ -167,7 +140,7 @@ export default function SubmissionChart({ submissions = [] }) {
 
             <Area
               type="monotone"
-              dataKey="submissions"
+              dataKey="submissions" // Maps to your backend's number values
               stroke="#5B5FEF"
               strokeWidth={3}
               fillOpacity={1}
