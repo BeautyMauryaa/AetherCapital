@@ -16,7 +16,7 @@ export const updateDocumentStatus = async (
 ) => {
 
   const response = await API.patch(
-    `/admin/submissions/${id}/status`,
+    `/admin/submissions/${id}/document-status`,
     { status }
   );
 
