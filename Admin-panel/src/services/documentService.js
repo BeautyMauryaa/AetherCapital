@@ -12,12 +12,16 @@ export const getDocuments = async () => {
 
 export const updateDocumentStatus = async (
   id,
+  documentType,
   status
 ) => {
 
   const response = await API.patch(
     `/admin/submissions/${id}/document-status`,
-    { status }
+    {
+      documentType,
+      status,
+    }
   );
 
   return response.data;
