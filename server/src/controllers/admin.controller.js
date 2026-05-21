@@ -129,37 +129,30 @@ export const updateDocumentStatus = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Submission not found");
   }
 
-  // Translate frontend readable labels into database schema keys
-  let schemaKey = null;
-  const normalizedType = documentType?.toLowerCase() || "";
+  // Handle nested sub-document dot notation paths (e.g., "documents.0")
+  if (documentType.includes(".")) {
+    const [arrayField, indexStr] = documentType.split(".");
+    const targetIndex = parseInt(indexStr, 10);
 
-  if (normalizedType.includes("front")) {
-    schemaKey = "idFront";
-  } else if (normalizedType.includes("back")) {
-    schemaKey = "idBack";
-  }
-
-  // Update logic execution block
-  if (!schemaKey) {
-    // Look into the standard documents sub-document array
-    const docIndex = submission.documents?.findIndex(
-      (d) => d.type?.toLowerCase() === normalizedType || d.name?.toLowerCase() === normalizedType
-    );
-
-    if (docIndex !== -1 && docIndex !== undefined) {
-      submission.documents[docIndex].status = status;
-      submission.markModified("documents");
-    } else {
-      throw new ApiError(400, `Document match not found for type: ${documentType}`);
+    if (!submission[arrayField] || !submission[arrayField][targetIndex]) {
+      throw new ApiError(400, `Nested document path '${documentType}' does not exist`);
     }
+
+    submission[arrayField][targetIndex].status = status;
+    submission.markModified(arrayField);
   } else {
-    // Target fields like idFront / idBack directly
-    if (!submission[schemaKey]) {
-      throw new ApiError(400, `Document record structure for '${schemaKey}' is uninitialized`);
+    // Handle root-level custom object properties ("idFront", "idBack", "profileImage")
+    if (!submission[documentType]) {
+      throw new ApiError(400, `Document record structure for '${documentType}' is uninitialized`);
     }
 
-    submission[schemaKey].status = status;
-    submission.markModified(schemaKey);
+    // Set the status safely handles nested object paths if field is an object shell
+    if (typeof submission[documentType] === "object") {
+      submission[documentType].status = status;
+    } else {
+      submission[documentType] = { file: submission[documentType], status };
+    }
+    submission.markModified(documentType);
   }
 
   await submission.save();
@@ -263,44 +256,95 @@ export const getStats = asyncHandler(async (req, res) => {
 
 // ─── GET /api/admin/documents ─────────────────────────────────────────────────
 export const getAllDocuments = asyncHandler(async (req, res) => {
-  const onboardings = await Onboarding.find().lean();
-  const documents = [];
+  const submissions = await Onboarding.find().lean();
+  const docs = [];
 
-  onboardings.forEach((item) => {
+  submissions.forEach((item) => {
+    const applicant =
+      `${item.firstName || ""} ${item.lastName || ""}`.trim() ||
+      item.companyName ||
+      "Unknown";
+
+    // Track file keys to clean up overlapping entries
+    const processedUrls = new Set();
+    const getUrl = (val) => {
+      if (!val) return null;
+      return typeof val === "string" ? val : val.file || val.url;
+    };
+
+    // ID FRONT
     if (item.idFront) {
-      documents.push({
+      const u = getUrl(item.idFront);
+      if (u) processedUrls.add(u.toLowerCase());
+
+      docs.push({
         submissionId: item._id,
-        type: "Government ID Front",
-        applicant: `${item.firstName || ""} ${item.lastName || ""}`,
-        status: item.idFront.status || "pending",
-        file: item.idFront,
+        documentType: "idFront",
+        type: "ID Front",
+        applicant,
+        status: item.idFront?.status || "pending",
+        file: item.idFront?.file || item.idFront,
       });
     }
 
+    // ID BACK
     if (item.idBack) {
-      documents.push({
+      const u = getUrl(item.idBack);
+      if (u) processedUrls.add(u.toLowerCase());
+
+      docs.push({
         submissionId: item._id,
-        type: "Government ID Back",
-        applicant: `${item.firstName || ""} ${item.lastName || ""}`,
-        status: item.idBack.status || "pending",
-        file: item.idBack,
+        documentType: "idBack",
+        type: "ID Back",
+        applicant,
+        status: item.idBack?.status || "pending",
+        file: item.idBack?.file || item.idBack,
       });
     }
 
+    // PROFILE IMAGE
+    if (item.profileImage) {
+      const u = getUrl(item.profileImage);
+      if (u) processedUrls.add(u.toLowerCase());
+
+      docs.push({
+        submissionId: item._id,
+        documentType: "profileImage",
+        type: "Profile Image",
+        applicant,
+        status: item.profileImage?.status || "pending",
+        file: item.profileImage?.file || item.profileImage,
+      });
+    }
+
+    // EXTRA DOCUMENTS
     if (item.documents?.length > 0) {
-      item.documents.forEach((doc) => {
-        documents.push({
+      item.documents.forEach((doc, index) => {
+        const u = getUrl(doc);
+        const titleLower = doc.type?.toLowerCase() || "";
+
+        // Deduplication boundary check
+        if (
+          (u && processedUrls.has(u.toLowerCase())) ||
+          titleLower.includes("front") ||
+          titleLower.includes("back")
+        ) {
+          return;
+        }
+
+        docs.push({
           submissionId: item._id,
-          type: doc.type || "Supporting Document",
-          applicant: `${item.firstName || ""} ${item.lastName || ""}`,
+          documentType: `documents.${index}`,
+          type: doc.type || "Document",
+          applicant,
           status: doc.status || "pending",
-          file: doc,
+          file: doc.file || doc,
         });
       });
     }
   });
 
   return res.status(200).json(
-    new ApiResponse(200, documents, "Documents fetched")
+    new ApiResponse(200, docs, "Documents fetched")
   );
 });
