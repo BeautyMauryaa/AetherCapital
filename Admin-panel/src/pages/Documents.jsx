@@ -150,16 +150,19 @@ export default function Documents() {
               lg={3}
               key={doc.file?.fileId || doc._id || index}
             >
-              <DocumentCard
-                title={doc.type}
-                user={doc.applicant}
-                status={doc.status}
-                file={doc.file}
-                submissionId={doc.submissionId}
-                documentType={doc.documentType}
-                setToast={setToast}
-                refreshDocuments={fetchDocuments}
-              />
+              {documents.map((doc, idx) => (
+  <DocumentCard
+    key={idx}
+    submissionId={doc.submissionId}
+    title={doc.type}            // Maps to title inside DocumentCard
+    documentType={doc.type}     // Passed exactly to handleUpdate -> backend translation
+    user={doc.applicant}
+    status={doc.status}         // Now reads the real, isolated verification status!
+    file={doc.file}
+    setToast={setToast}
+    refreshDocuments={fetchDocuments}
+  />
+))}
             </Grid>
           ))
         ) : (
