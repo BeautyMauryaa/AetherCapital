@@ -78,8 +78,23 @@ operatingHours: mongoose.Schema.Types.Mixed,
 
   // Google Drive files
   profileImage: DriveFileSchema,
-  idFront:      DriveFileSchema,
-  idBack:       DriveFileSchema,
+ idFront: {
+  file: DriveFileSchema,
+  status: {
+    type: String,
+    enum: ["pending", "verified", "rejected"],
+    default: "pending",
+  },
+},
+
+idBack: {
+  file: DriveFileSchema,
+  status: {
+    type: String,
+    enum: ["pending", "verified", "rejected"],
+    default: "pending",
+  },
+},
   documents:    [DriveFileSchema],
   signature: {
     driveFile: DriveFileSchema,
