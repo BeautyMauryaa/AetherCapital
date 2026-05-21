@@ -58,62 +58,45 @@ const formatSubmission = (item) => ({
 });
 
 // ─── GET /api/admin/submissions ───────────────────────────────────────────────
+export const getAllSubmissions = asyncHandler(async (req, res) => {
+  const { status, search, page = 1, limit = 50 } = req.query;
 
-// export const updateDocumentStatus = asyncHandler(async (req, res) => {
-//   const { documentType, status } = req.body;
+  const query = {};
 
-//   const allowedStatuses = ["pending", "verified", "rejected"];
-//   if (!allowedStatuses.includes(status)) {
-//     throw new ApiError(400, "Invalid document status");
-//   }
+  if (status && status !== "all") {
+    query.status = status;
+  }
 
-//   const submission = await Onboarding.findById(req.params.id);
-//   if (!submission) {
-//     throw new ApiError(404, "Submission not found");
-//   }
+  if (search) {
+    query.$or = [
+      { firstName:   { $regex: search, $options: "i" } },
+      { lastName:    { $regex: search, $options: "i" } },
+      { email:       { $regex: search, $options: "i" } },
+      { companyName: { $regex: search, $options: "i" } },
+      { legalName:   { $regex: search, $options: "i" } },
+    ];
+  }
 
-//   // 1. Map frontend UI string labels back to actual database schema properties
-//   let schemaKey = null;
-//   const normalizedType = documentType?.toLowerCase() || "";
+  const skip = (Number(page) - 1) * Number(limit);
 
-//   if (normalizedType.includes("front")) {
-//     schemaKey = "idFront";
-//   } else if (normalizedType.includes("back")) {
-//     schemaKey = "idBack";
-//   }
+  const [submissions, total] = await Promise.all([
+    Onboarding.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit))
+      .lean(),
+    Onboarding.countDocuments(query),
+  ]);
 
-//   // 2. Handle sub-documents if it lives inside an array (e.g., item.documents)
-//   if (!schemaKey) {
-//     // If it's a supporting document inside your array, update it there
-//     const docIndex = submission.documents?.findIndex(
-//       (d) => d.type?.toLowerCase() === normalizedType || d.name?.toLowerCase() === normalizedType
-//     );
-
-//     if (docIndex !== -1 && docIndex !== undefined) {
-//       submission.documents[docIndex].status = status;
-//     } else {
-//       throw new ApiError(400, `Document structure match not found for: ${documentType}`);
-//     }
-//   } else {
-//     // 3. Ensure the root document field object actually exists before setting status
-//     if (!submission[schemaKey]) {
-//       throw new ApiError(400, `Schema property '${schemaKey}' is uninitialized or missing data`);
-//     }
-    
-//     submission[schemaKey].status = status;
-//   }
-
-//   // Mark modified explicitly if updating deeply nested mixed properties
-//   submission.markModified("idFront");
-//   submission.markModified("idBack");
-//   submission.markModified("documents");
-
-//   await submission.save();
-
-//   return res.status(200).json(
-//     new ApiResponse(200, submission, "Document status updated successfully")
-//   );
-// });
+  return res.status(200).json(
+    new ApiResponse(200, {
+      submissions: submissions.map(formatSubmission),
+      total,
+      page:  Number(page),
+      pages: Math.ceil(total / Number(limit)),
+    }, "Submissions fetched")
+  );
+});
 
 // ─── GET /api/admin/submissions/:id ──────────────────────────────────────────
 export const getSubmission = asyncHandler(async (req, res) => {
@@ -132,45 +115,58 @@ export const getSubmission = asyncHandler(async (req, res) => {
   );
 });
 
+// ─── PATCH /api/admin/submissions/:id/document-status ────────────────────────
 export const updateDocumentStatus = asyncHandler(async (req, res) => {
-
   const { documentType, status } = req.body;
 
-  const allowedStatuses = [
-    "pending",
-    "verified",
-    "rejected",
-  ];
-
+  const allowedStatuses = ["pending", "verified", "rejected"];
   if (!allowedStatuses.includes(status)) {
-    throw new ApiError(
-      400,
-      "Invalid document status"
-    );
+    throw new ApiError(400, "Invalid document status");
   }
 
   const submission = await Onboarding.findById(req.params.id);
-
   if (!submission) {
     throw new ApiError(404, "Submission not found");
   }
 
-  if (!submission[documentType]) {
-    throw new ApiError(400, "Document not found");
+  // Translate frontend readable labels into database schema keys
+  let schemaKey = null;
+  const normalizedType = documentType?.toLowerCase() || "";
+
+  if (normalizedType.includes("front")) {
+    schemaKey = "idFront";
+  } else if (normalizedType.includes("back")) {
+    schemaKey = "idBack";
   }
 
-  submission[documentType].status = status;
+  // Update logic execution block
+  if (!schemaKey) {
+    // Look into the standard documents sub-document array
+    const docIndex = submission.documents?.findIndex(
+      (d) => d.type?.toLowerCase() === normalizedType || d.name?.toLowerCase() === normalizedType
+    );
+
+    if (docIndex !== -1 && docIndex !== undefined) {
+      submission.documents[docIndex].status = status;
+      submission.markModified("documents");
+    } else {
+      throw new ApiError(400, `Document match not found for type: ${documentType}`);
+    }
+  } else {
+    // Target fields like idFront / idBack directly
+    if (!submission[schemaKey]) {
+      throw new ApiError(400, `Document record structure for '${schemaKey}' is uninitialized`);
+    }
+
+    submission[schemaKey].status = status;
+    submission.markModified(schemaKey);
+  }
 
   await submission.save();
 
   return res.status(200).json(
-    new ApiResponse(
-      200,
-      submission,
-      "Document status updated"
-    )
+    new ApiResponse(200, submission, "Document status updated successfully")
   );
-
 });
 
 // ─── PATCH /api/admin/submissions/:id/status ─────────────────────────────────
@@ -209,7 +205,6 @@ export const getStats = asyncHandler(async (req, res) => {
     approved,
     rejected,
     highRisk,
-    // Recent 7 days
     recentDocs,
   ] = await Promise.all([
     Onboarding.countDocuments({}),
@@ -225,8 +220,6 @@ export const getStats = asyncHandler(async (req, res) => {
       .lean(),
   ]);
 
-
-  
   // Daily breakdown for chart (last 7 days)
   const dailyMap = {};
   for (let i = 6; i >= 0; i--) {
@@ -268,6 +261,7 @@ export const getStats = asyncHandler(async (req, res) => {
   );
 });
 
+// ─── GET /api/admin/documents ─────────────────────────────────────────────────
 export const getAllDocuments = asyncHandler(async (req, res) => {
   const onboardings = await Onboarding.find().lean();
   const documents = [];
@@ -278,7 +272,7 @@ export const getAllDocuments = asyncHandler(async (req, res) => {
         submissionId: item._id,
         type: "Government ID Front",
         applicant: `${item.firstName || ""} ${item.lastName || ""}`,
-        status: item.idFront.status || "pending", // <--- Fixed: Individual doc status
+        status: item.idFront.status || "pending",
         file: item.idFront,
       });
     }
@@ -288,7 +282,7 @@ export const getAllDocuments = asyncHandler(async (req, res) => {
         submissionId: item._id,
         type: "Government ID Back",
         applicant: `${item.firstName || ""} ${item.lastName || ""}`,
-        status: item.idBack.status || "pending", // <--- Fixed: Individual doc status
+        status: item.idBack.status || "pending",
         file: item.idBack,
       });
     }
@@ -299,7 +293,7 @@ export const getAllDocuments = asyncHandler(async (req, res) => {
           submissionId: item._id,
           type: doc.type || "Supporting Document",
           applicant: `${item.firstName || ""} ${item.lastName || ""}`,
-          status: doc.status || "pending", // <--- Fixed: Nested item status
+          status: doc.status || "pending",
           file: doc,
         });
       });
@@ -310,5 +304,3 @@ export const getAllDocuments = asyncHandler(async (req, res) => {
     new ApiResponse(200, documents, "Documents fetched")
   );
 });
-
-
