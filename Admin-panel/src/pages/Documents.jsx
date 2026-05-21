@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { Grid, Snackbar, Alert, Box, Typography, MenuItem, Select, FormControl } from "@mui/material";
+import {
+  Grid,
+  Snackbar,
+  Alert,
+  Box,
+  Typography,
+  MenuItem,
+  Select,
+  FormControl,
+} from "@mui/material";
 import DocumentCard from "../components/documents/DocumentCard";
 import { getDocuments } from "../services/documentService";
 
@@ -34,14 +43,21 @@ export default function Documents() {
   // ── Reactive Filtering Pipeline Logic ──────────────────────────────────────
   const filteredDocuments = documents.filter((doc) => {
     // Exact check mapping logic for match rules
-    const matchesType = 
-      typeFilter === "all" || 
-      doc.type?.toLowerCase().replace(/\s+/g, "") === typeFilter.toLowerCase().replace(/\s+/g, "");
+    const matchesType =
+      typeFilter === "all" ||
+      doc.type?.toLowerCase().replace(/\s+/g, "") ===
+        typeFilter.toLowerCase().replace(/\s+/g, "");
 
     // Normalizing variants like 'submitted'/'pending' and 'verified'/'approved'
     const docStatus = doc.status?.toLowerCase();
-    const normalizedDocStatus = (docStatus === "submitted") ? "pending" : (docStatus === "approved") ? "verified" : docStatus;
-    const matchesStatus = statusFilter === "all" || normalizedDocStatus === statusFilter;
+    const normalizedDocStatus =
+      docStatus === "submitted"
+        ? "pending"
+        : docStatus === "approved"
+          ? "verified"
+          : docStatus;
+    const matchesStatus =
+      statusFilter === "all" || normalizedDocStatus === statusFilter;
 
     return matchesType && matchesStatus;
   });
@@ -49,14 +65,14 @@ export default function Documents() {
   return (
     <Box sx={{ p: 1 }}>
       {/* ── Sub Header Control Panel Section ── */}
-      <Box 
-        sx={{ 
-          display: "flex", 
-          justifyContent: "space-between", 
-          alignItems: "center", 
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
           mb: 4,
           flexWrap: "wrap",
-          gap: 2
+          gap: 2,
         }}
       >
         <Typography sx={{ fontSize: 16, fontWeight: 700, color: "#0f172a" }}>
@@ -77,13 +93,19 @@ export default function Documents() {
                 height: 36,
                 bgcolor: "#ffffff",
                 color: "#1e293b",
-                "& .MuiOutlinedInput-notchedOutline": { borderColor: "#e2e8f0" }
+                "& .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#e2e8f0",
+                },
               }}
             >
               <MenuItem value="all">All Types</MenuItem>
-              <MenuItem value="Government ID Front">Government ID Front</MenuItem>
+              <MenuItem value="Government ID Front">
+                Government ID Front
+              </MenuItem>
               <MenuItem value="Government ID Back">Government ID Back</MenuItem>
-              <MenuItem value="Certificate of Incorporation">Certificate of Incorporation</MenuItem>
+              <MenuItem value="Certificate of Incorporation">
+                Certificate of Incorporation
+              </MenuItem>
               <MenuItem value="Tax Registration">Tax Registration</MenuItem>
               <MenuItem value="Proof of Address">Proof of Address</MenuItem>
             </Select>
@@ -102,7 +124,9 @@ export default function Documents() {
                 height: 36,
                 bgcolor: "#ffffff",
                 color: "#1e293b",
-                "& .MuiOutlinedInput-notchedOutline": { borderColor: "#e2e8f0" }
+                "& .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#e2e8f0",
+                },
               }}
             >
               <MenuItem value="all">All Status</MenuItem>
@@ -131,7 +155,8 @@ export default function Documents() {
                 user={doc.applicant}
                 status={doc.status}
                 file={doc.file}
-                submissionId={doc.submissionId || doc._id}
+                submissionId={doc.submissionId}
+                documentType={doc.documentType}
                 setToast={setToast}
                 refreshDocuments={fetchDocuments}
               />
@@ -139,8 +164,18 @@ export default function Documents() {
           ))
         ) : (
           <Grid item xs={12}>
-            <Box sx={{ py: 8, textAlign: "center", border: "1px dashed #e2e8f0", borderRadius: 4, bgcolor: "#f8fafc" }}>
-              <Typography sx={{ fontSize: 13, fontWeight: 600, color: "#64748b" }}>
+            <Box
+              sx={{
+                py: 8,
+                textAlign: "center",
+                border: "1px dashed #e2e8f0",
+                borderRadius: 4,
+                bgcolor: "#f8fafc",
+              }}
+            >
+              <Typography
+                sx={{ fontSize: 13, fontWeight: 600, color: "#64748b" }}
+              >
                 No records matching active dashboard criteria.
               </Typography>
             </Box>
@@ -155,9 +190,9 @@ export default function Documents() {
         onClose={() => setToast((prev) => ({ ...prev, open: false }))}
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
       >
-        <Alert 
-          severity={toast.severity} 
-          variant="filled" 
+        <Alert
+          severity={toast.severity}
+          variant="filled"
           sx={{ width: "100%", borderRadius: 2, fontSize: 13, fontWeight: 600 }}
         >
           {toast.message}
