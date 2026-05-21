@@ -72,13 +72,13 @@ export const getAllDocuments = asyncHandler(async (req, res) => {
         const titleLower = doc.type?.toLowerCase() || "";
 
         // Deduplication boundary check: block duplicate step-file uploads
-        if (
-          (docUrl && processedUrls.has(docUrl.toLowerCase())) ||
-          titleLower.includes("front") ||
-          titleLower.includes("back")
-        ) {
-          return;
-        }
+       if (
+  titleLower.includes("front") ||
+  titleLower.includes("back") ||
+  titleLower.includes("profile")
+) {
+  return;
+}
 
         docs.push({
           submissionId: item._id,
