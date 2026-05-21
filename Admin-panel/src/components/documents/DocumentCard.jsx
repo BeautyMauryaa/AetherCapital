@@ -10,8 +10,6 @@ import {
   LocationOnOutlined
 } from "@mui/icons-material";
 import { updateDocumentStatus } from "../../services/documentService";
-
-// Helper hook to render corresponding file-type icons matching layout previews
 const getDocumentIcon = (title) => {
   const t = title?.toLowerCase() || "";
   if (t.includes("id") || t.includes("government")) {
@@ -40,23 +38,47 @@ export default function DocumentCard({
   status,
   file,
   submissionId,
+  documentType,
   setToast,
   refreshDocuments,
-}) {
+})  {
   
   const currentStatus = status?.toLowerCase() || "pending";
   const style = STATUS_CHIP_STYLE[currentStatus] || STATUS_CHIP_STYLE.pending;
 
-  const handleUpdate = async (targetStatus, successMessage, errorMessage) => {
-    try {
-      await updateDocumentStatus(submissionId, targetStatus);
-      setToast({ open: true, message: successMessage, severity: "success" });
-      refreshDocuments();
-    } catch (error) {
-      console.error(error);
-      setToast({ open: true, message: errorMessage, severity: "error" });
-    }
-  };
+ const handleUpdate = async (
+  targetStatus,
+  successMessage,
+  errorMessage
+) => {
+  try {
+
+    await updateDocumentStatus(
+      submissionId,
+      documentType,
+      targetStatus
+    );
+
+    setToast({
+      open: true,
+      message: successMessage,
+      severity: "success"
+    });
+
+    refreshDocuments();
+
+  } catch (error) {
+
+    console.error(error);
+
+    setToast({
+      open: true,
+      message: errorMessage,
+      severity: "error"
+    });
+
+  }
+};
 
   return (
     <Card
@@ -73,7 +95,6 @@ export default function DocumentCard({
       }}
     >
       <Box>
-        {/* Dynamic Header File Graphic representation */}
         <Box sx={{ mb: 1.5 }}>
           {getDocumentIcon(title)}
         </Box>
@@ -85,8 +106,6 @@ export default function DocumentCard({
         <Typography sx={{ fontSize: 11, fontWeight: 500, color: "#94a3b8", mb: 1.5 }}>
           {user || "Unknown Applicant"}
         </Typography>
-
-        {/* Customized Status Chip matching structural borders */}
         <Box
           sx={{
             display: "inline-block",
@@ -103,8 +122,6 @@ export default function DocumentCard({
           {style.text}
         </Box>
       </Box>
-
-      {/* Action Footer row layout containing minimalist icon button triggers */}
       <Box sx={{ mt: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <IconButton
           component="a"
