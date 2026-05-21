@@ -14,67 +14,66 @@ export const getAllDocuments = asyncHandler(async (req, res) => {
       item.companyName ||
       "Unknown";
 
-    // Track processed file URLs to prevent dashboard layout duplication
+    // Track processed files by their Google Drive directUrl / webViewLink to prevent duplications
     const processedUrls = new Set();
-    const getUrl = (val) => {
-      if (!val) return null;
-      return typeof val === "string" ? val : val.file || val.url;
+    const trackUrl = (driveFileObj) => {
+      if (!driveFileObj) return;
+      const url = driveFileObj.directUrl || driveFileObj.webViewLink;
+      if (url) processedUrls.add(url.toLowerCase());
     };
 
-    // 1. ID FRONT
-    if (item.idFront) {
-      const u = getUrl(item.idFront);
-      if (u) processedUrls.add(u.toLowerCase());
+    // Populate tracking set with known explicitly defined assets
+    if (item.idFront?.file) trackUrl(item.idFront.file);
+    if (item.idBack?.file)  trackUrl(item.idBack.file);
+    if (item.profileImage)  trackUrl(item.profileImage);
 
+    // 1. ID FRONT
+    if (item.idFront && item.idFront.file) {
       docs.push({
         submissionId: item._id,
         documentType: "idFront",
         type: "ID Front",
         applicant,
-        status: item.idFront?.status || "pending",
-        file: item.idFront?.file || item.idFront,
+        status: item.idFront.status || "pending",
+        file: item.idFront.file, // Passes the deep DriveFileSchema object
       });
     }
 
     // 2. ID BACK
-    if (item.idBack) {
-      const u = getUrl(item.idBack);
-      if (u) processedUrls.add(u.toLowerCase());
-
+    if (item.idBack && item.idBack.file) {
       docs.push({
         submissionId: item._id,
         documentType: "idBack",
         type: "ID Back",
         applicant,
-        status: item.idBack?.status || "pending",
-        file: item.idBack?.file || item.idBack,
+        status: item.idBack.status || "pending",
+        file: item.idBack.file, // Passes the deep DriveFileSchema object
       });
     }
 
-    // 3. PROFILE IMAGE
-    if (item.profileImage) {
-      const u = getUrl(item.profileImage);
-      if (u) processedUrls.add(u.toLowerCase());
-
+    // 3. PROFILE IMAGE (Note: Has no status property in your schema definition)
+    if (item.profileImage && item.profileImage.webViewLink) {
       docs.push({
         submissionId: item._id,
         documentType: "profileImage",
         type: "Profile Image",
         applicant,
-        status: item.profileImage?.status || "pending",
-        file: item.profileImage?.file || item.profileImage,
+        status: "verified", // Hardcoded fallback since profile images don't hold verification states in schema
+        file: item.profileImage, // Passes the raw DriveFileSchema object
       });
     }
 
-    // 4. EXTRA DOCUMENTS (Deduplicated safely using Database ID tokens)
+    // 4. EXTRA DOCUMENTS (Deduplicated using internal MongoDB array _id)
     if (item.documents?.length > 0) {
       item.documents.forEach((doc) => {
-        const u = getUrl(doc);
+        if (!doc.file) return;
+
+        const docUrl = doc.file.directUrl || doc.file.webViewLink;
         const titleLower = doc.type?.toLowerCase() || "";
 
-        // Intercept duplicates caught inside general array fallbacks
+        // Deduplication boundary check: block duplicate step-file uploads
         if (
-          (u && processedUrls.has(u.toLowerCase())) ||
+          (docUrl && processedUrls.has(docUrl.toLowerCase())) ||
           titleLower.includes("front") ||
           titleLower.includes("back")
         ) {
@@ -83,19 +82,19 @@ export const getAllDocuments = asyncHandler(async (req, res) => {
 
         docs.push({
           submissionId: item._id,
-          // Bind directly to structural DB ID token to prevent index shifting bugs
-          documentType: `documents.${doc._id || doc.id}`,
-          type: doc.type || "Document",
+          // Binds to the actual nested item _id created inside your documents schema array
+          documentType: `documents.${doc._id}`,
+          type: doc.type || "Supporting Document",
           applicant,
           status: doc.status || "pending",
-          file: doc.file || doc,
+          file: doc.file,
         });
       });
     }
   });
 
   return res.status(200).json(
-    new ApiResponse(200, docs, "Documents fetched cleanly without duplication")
+    new ApiResponse(200, docs, "Documents matrix fetched successfully")
   );
 });
 
@@ -106,7 +105,7 @@ export const updateDocumentStatus = asyncHandler(async (req, res) => {
 
   const allowedStatuses = ["pending", "verified", "rejected"];
   if (!allowedStatuses.includes(status)) {
-    throw new ApiError(400, "Invalid document verification status value");
+    throw new ApiError(400, "Invalid status. Use: pending, verified, or rejected");
   }
 
   const submission = await Onboarding.findById(id);
@@ -114,39 +113,39 @@ export const updateDocumentStatus = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Target onboarding entry reference not found");
   }
 
-  // Handle nested sub-document array routing via true DB strings (e.g. "documents.65ef49a...")
+  // Handle embedded nested document selection arrays ("documents.65ef49a...")
   if (documentType.includes(".")) {
     const [arrayField, subDocId] = documentType.split(".");
-    
+
     if (!submission[arrayField] || typeof submission[arrayField].id !== "function") {
-      throw new ApiError(400, `Target field '${arrayField}' is not a valid subdocument array`);
+      throw new ApiError(400, `Schema property '${arrayField}' is not an accessible subdocument array`);
     }
 
-    // Extract exact embedded schema row cleanly using Mongoose .id() method
     const targetSubDoc = submission[arrayField].id(subDocId);
     if (!targetSubDoc) {
-      throw new ApiError(404, `Subdocument item with matching key ID [${subDocId}] not found`);
+      throw new ApiError(404, `Document item with database ID [${subDocId}] was not found`);
     }
 
     targetSubDoc.status = status;
     submission.markModified(arrayField);
   } else {
-    // Handle root top-level fields ("idFront", "idBack", "profileImage")
-    if (!submission[documentType]) {
-      throw new ApiError(400, `Field property space '${documentType}' is uninitialized or empty`);
+    // Handle root schema structural positions directly ("idFront", "idBack", "profileImage")
+    if (documentType === "profileImage") {
+      throw new ApiError(400, "Profile Image does not contain a status property inside your database schema");
     }
 
-    if (typeof submission[documentType] === "object") {
-      submission[documentType].status = status;
-    } else {
-      submission[documentType] = { file: submission[documentType], status };
+    if (!submission[documentType]) {
+      throw new ApiError(400, `The target asset field '${documentType}' is uninitialized or missing structure`);
     }
+
+    // Safely sets status on idFront or idBack directly alongside their file object
+    submission[documentType].status = status;
     submission.markModified(documentType);
   }
 
   await submission.save();
 
   return res.status(200).json(
-    new ApiResponse(200, submission, "Document status tracked and modified successfully")
+    new ApiResponse(200, submission, "Document validation status updated successfully")
   );
 });
