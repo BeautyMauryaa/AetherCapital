@@ -119,7 +119,8 @@ const DocTile = ({ label, file }) => (
           Uploaded
         </Typography>
       </>
-    )}
+    )
+  }
   </Box>
 );
 
@@ -201,6 +202,17 @@ export default function SubmissionDrawer({ open, onClose, submission }) {
 
   const riskScore = localSubmission.riskScore || 0;
 
+  // ── Account Specific Parsing Logic ───────────────────────────────────────────
+  const isIndividual = localSubmission.accountType === "individual";
+
+  const displayName = isIndividual
+    ? `${localSubmission.firstName || ""} ${localSubmission.lastName || ""}`.trim()
+    : localSubmission.companyName || localSubmission.legalName || "No Business Name";
+
+  const avatarLetter = isIndividual
+    ? localSubmission.firstName?.[0] || "?"
+    : (localSubmission.companyName?.[0] || localSubmission.legalName?.[0] || "?");
+
   return (
     <Drawer
       anchor="right"
@@ -211,7 +223,7 @@ export default function SubmissionDrawer({ open, onClose, submission }) {
           width: { xs: "100vw", sm: 540 },
           display: "flex",
           flexDirection: "column",
-          bgcolor: "#ffffff", // FIXED: White background container
+          bgcolor: "#ffffff", 
           borderLeft: "1px solid #e2e8f0",
         },
       }}
@@ -226,11 +238,11 @@ export default function SubmissionDrawer({ open, onClose, submission }) {
               fontSize: "0.9rem",
               fontWeight: 700,
               bgcolor: "#2563eb",
-              color: "#ffffff"
+              color: "#ffffff",
+              textTransform: "uppercase"
             }}
           >
-            {localSubmission.firstName?.[0]}
-            {localSubmission.lastName?.[0]}
+            {avatarLetter}
           </Avatar>
 
           <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -238,11 +250,12 @@ export default function SubmissionDrawer({ open, onClose, submission }) {
               sx={{
                 fontWeight: 700,
                 fontSize: 18,
-                color: "#0f172a", // FIXED: Bold dark text color for name
+                color: "#0f172a", 
                 letterSpacing: "-0.01em",
+                textTransform: isIndividual ? "capitalize" : "none"
               }}
             >
-              {localSubmission.firstName} {localSubmission.lastName}
+              {displayName}
             </Typography>
             <Typography sx={{ fontSize: 11, color: "#64748b", mt: 0.25 }}>
               Ref: {localSubmission._id?.toString().slice(-7).toUpperCase()} ·
@@ -326,8 +339,8 @@ export default function SubmissionDrawer({ open, onClose, submission }) {
           <Grid container spacing={2.5}>
             <Grid item xs={6}>
               <Field
-                label="Full Name"
-                value={`${localSubmission.firstName || ""} ${localSubmission.lastName || ""}`.trim()}
+                label={isIndividual ? "Full Name" : "Business Registration Name"}
+                value={displayName}
               />
             </Grid>
             <Grid item xs={6}>
@@ -364,16 +377,18 @@ export default function SubmissionDrawer({ open, onClose, submission }) {
               />
             </Grid>
 
-            {localSubmission.accountType?.toLowerCase() !== "individual" && (
+            {!isIndividual && (
               <>
                 <Grid item xs={6}>
                   <Field
                     label="Company Name"
-                    value={
-                      localSubmission.companyName ||
-                      localSubmission.legalName ||
-                      "—"
-                    }
+                    value={localSubmission.companyName || "—"}
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <Field
+                    label="Legal Name"
+                    value={localSubmission.legalName || "—"}
                   />
                 </Grid>
                 <Grid item xs={6}>
