@@ -1,116 +1,116 @@
-import Onboarding from "../models/onboarding.model.js";
-import { asyncHandler } from "../utils/asyncHandler.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
+// import Onboarding from "../models/onboarding.model.js";
+// import { asyncHandler } from "../utils/asyncHandler.js";
+// import { ApiResponse } from "../utils/ApiResponse.js";
 
-export const getAllDocuments = asyncHandler(async (req, res) => {
+// export const getAllDocuments = asyncHandler(async (req, res) => {
 
-  const submissions = await Onboarding.find().lean();
+//   const submissions = await Onboarding.find().lean();
 
-  const docs = [];
+//   const docs = [];
 
-  submissions.forEach((item) => {
+//   submissions.forEach((item) => {
 
-    const applicant =
-      `${item.firstName || ""} ${item.lastName || ""}`.trim() ||
-      item.companyName ||
-      "Unknown";
+//     const applicant =
+//       `${item.firstName || ""} ${item.lastName || ""}`.trim() ||
+//       item.companyName ||
+//       "Unknown";
 
-    // ID FRONT
-    if (item.idFront) {
+//     // ID FRONT
+//     if (item.idFront) {
 
-      docs.push({
-        submissionId: item._id,
-        documentType: "idFront",
+//       docs.push({
+//         submissionId: item._id,
+//         documentType: "idFront",
 
-        type: "ID Front",
+//         type: "ID Front",
 
-        applicant,
+//         applicant,
 
-        status:
-          item.idFront?.status || "pending",
+//         status:
+//           item.idFront?.status || "pending",
 
-        file:
-          item.idFront?.file || item.idFront,
-      });
+//         file:
+//           item.idFront?.file || item.idFront,
+//       });
 
-    }
+//     }
 
-    // ID BACK
-    if (item.idBack) {
+//     // ID BACK
+//     if (item.idBack) {
 
-      docs.push({
-        submissionId: item._id,
-        documentType: "idBack",
+//       docs.push({
+//         submissionId: item._id,
+//         documentType: "idBack",
 
-        type: "ID Back",
+//         type: "ID Back",
 
-        applicant,
+//         applicant,
 
-        status:
-          item.idBack?.status || "pending",
+//         status:
+//           item.idBack?.status || "pending",
 
-        file:
-          item.idBack?.file || item.idBack,
-      });
+//         file:
+//           item.idBack?.file || item.idBack,
+//       });
 
-    }
+//     }
 
-    // PROFILE IMAGE
-    if (item.profileImage) {
+//     // PROFILE IMAGE
+//     if (item.profileImage) {
 
-      docs.push({
-        submissionId: item._id,
-        documentType: "profileImage",
+//       docs.push({
+//         submissionId: item._id,
+//         documentType: "profileImage",
 
-        type: "Profile Image",
+//         type: "Profile Image",
 
-        applicant,
+//         applicant,
 
-        status:
-          item.profileImage?.status || "pending",
+//         status:
+//           item.profileImage?.status || "pending",
 
-        file:
-          item.profileImage?.file || item.profileImage,
-      });
+//         file:
+//           item.profileImage?.file || item.profileImage,
+//       });
 
-    }
+//     }
 
-    // EXTRA DOCUMENTS
-    if (item.documents?.length > 0) {
+//     // EXTRA DOCUMENTS
+//     if (item.documents?.length > 0) {
 
-      item.documents.forEach((doc, index) => {
+//       item.documents.forEach((doc, index) => {
 
-        docs.push({
-          submissionId: item._id,
+//         docs.push({
+//           submissionId: item._id,
 
-          documentType:
-            `documents.${index}`,
+//           documentType:
+//             `documents.${index}`,
 
-          type:
-            doc.type || "Document",
+//           type:
+//             doc.type || "Document",
 
-          applicant,
+//           applicant,
 
-          status:
-            doc.status || "pending",
+//           status:
+//             doc.status || "pending",
 
-          file:
-            doc.file || doc,
-        });
+//           file:
+//             doc.file || doc,
+//         });
 
-      });
+//       });
 
-    }
+//     }
 
-  });
+//   });
 
-  return res.status(200).json(
-    new ApiResponse(
-      200,
-      docs,
-      "Documents fetched"
-    )
-  );
+//   return res.status(200).json(
+//     new ApiResponse(
+//       200,
+//       docs,
+//       "Documents fetched"
+//     )
+//   );
 
-});
+// });
     
