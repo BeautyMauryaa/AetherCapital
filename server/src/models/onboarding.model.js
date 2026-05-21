@@ -23,14 +23,32 @@ const OnboardingSchema = new mongoose.Schema({
   // Step 1
   accountType:   { type: String, enum: ["individual", "business", "enterprise"] },
 
-  // Step 2
-  firstName:     String,
-  middleName:    String,
-  lastName:      String,
-  dateOfBirth:   Date,
-  gender:        String,
-  nationality:   String,
+ // Step 2
+firstName:     String,
+middleName:    String,
+lastName:      String,
+dateOfBirth:   Date,
+gender:        String,
+nationality:   String,
 
+// Business / Enterprise
+companyName:   String,
+legalName:     String,
+tradeName:     String,
+regNumber:     String,
+regDate:       Date,
+
+industry:      String,
+employeeRange: String,
+
+subsidiaryCount: Number,
+parentCompany:  String,
+
+isListed:    Boolean,
+tickerSymbol:String,
+
+operatingHours: mongoose.Schema.Types.Mixed,
+  
   // Step 3
   address:        AddressSchema,
   sameAsPrimary:  Boolean,
