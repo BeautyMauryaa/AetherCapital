@@ -269,57 +269,46 @@ export const getStats = asyncHandler(async (req, res) => {
 });
 
 export const getAllDocuments = asyncHandler(async (req, res) => {
-
   const onboardings = await Onboarding.find().lean();
-
   const documents = [];
 
   onboardings.forEach((item) => {
-
     if (item.idFront) {
       documents.push({
-  submissionId: item._id,
-  type: "Government ID Front",
-  applicant: `${item.firstName || ""} ${item.lastName || ""}`,
-  status: item.status,
-  file: item.idFront,
-});
+        submissionId: item._id,
+        type: "Government ID Front",
+        applicant: `${item.firstName || ""} ${item.lastName || ""}`,
+        status: item.idFront.status || "pending", // <--- Fixed: Individual doc status
+        file: item.idFront,
+      });
     }
 
     if (item.idBack) {
       documents.push({
-  submissionId: item._id,
-  type: "Government ID Back",
-  applicant: `${item.firstName || ""} ${item.lastName || ""}`,
-  status: item.status,
-  file: item.idBack,
-});
+        submissionId: item._id,
+        type: "Government ID Back",
+        applicant: `${item.firstName || ""} ${item.lastName || ""}`,
+        status: item.idBack.status || "pending", // <--- Fixed: Individual doc status
+        file: item.idBack,
+      });
     }
 
     if (item.documents?.length > 0) {
-
       item.documents.forEach((doc) => {
-
         documents.push({
-  submissionId: item._id,
-  type: "Supporting Document",
-  applicant: `${item.firstName || ""} ${item.lastName || ""}`,
-  status: item.status,
-  file: doc,
-});
-
+          submissionId: item._id,
+          type: doc.type || "Supporting Document",
+          applicant: `${item.firstName || ""} ${item.lastName || ""}`,
+          status: doc.status || "pending", // <--- Fixed: Nested item status
+          file: doc,
+        });
       });
-
     }
-
   });
 
   return res.status(200).json(
-    new ApiResponse(
-      200,
-      documents,
-      "Documents fetched"
-    )
+    new ApiResponse(200, documents, "Documents fetched")
   );
-
 });
+
+
