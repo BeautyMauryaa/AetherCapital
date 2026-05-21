@@ -22,10 +22,10 @@ export const getAllDocuments = asyncHandler(async (req, res) => {
       if (url) processedUrls.add(url.toLowerCase());
     };
 
-    // Populate tracking set with known explicitly defined assets
-    if (item.idFront?.file) trackUrl(item.idFront.file);
-    if (item.idBack?.file)  trackUrl(item.idBack.file);
-    if (item.profileImage)  trackUrl(item.profileImage);
+    // Populate tracking set with known explicitly defined root-level assets
+    if (item.idFront?.file)   trackUrl(item.idFront.file);
+    if (item.idBack?.file)    trackUrl(item.idBack.file);
+    if (item.profileImage?.file) trackUrl(item.profileImage.file);
 
     // 1. ID FRONT
     if (item.idFront && item.idFront.file) {
@@ -35,7 +35,7 @@ export const getAllDocuments = asyncHandler(async (req, res) => {
         type: "ID Front",
         applicant,
         status: item.idFront.status || "pending",
-        file: item.idFront.file, // Passes the deep DriveFileSchema object
+        file: item.idFront.file, 
       });
     }
 
@@ -47,48 +47,48 @@ export const getAllDocuments = asyncHandler(async (req, res) => {
         type: "ID Back",
         applicant,
         status: item.idBack.status || "pending",
-        file: item.idBack.file, // Passes the deep DriveFileSchema object
+        file: item.idBack.file, 
       });
     }
 
-    // 3. PROFILE IMAGE (Note: Has no status property in your schema definition)
-    if (item.profileImage && item.profileImage.webViewLink) {
+    // 3. PROFILE IMAGE (Reflects your clean updated schema structure)
+    if (item.profileImage && item.profileImage.file) {
       docs.push({
         submissionId: item._id,
         documentType: "profileImage",
         type: "Profile Image",
         applicant,
-        status: "verified", // Hardcoded fallback since profile images don't hold verification states in schema
-        file: item.profileImage, // Passes the raw DriveFileSchema object
+        status: item.profileImage.status || "pending", 
+        file: item.profileImage.file, 
       });
     }
 
-    // 4. EXTRA DOCUMENTS (Deduplicated using internal MongoDB array _id)
+    // 4. EXTRA DOCUMENTS (Deduplicated cleanly by structural URL verification)
     if (item.documents?.length > 0) {
-      item.documents.forEach((doc) => {
+      item.documents.forEach((doc, index) => {
         if (!doc.file) return;
 
         const docUrl = doc.file.directUrl || doc.file.webViewLink;
-        const titleLower = doc.type?.toLowerCase() || "";
 
-        // Deduplication boundary check: block duplicate step-file uploads
-       if (
-  titleLower.includes("front") ||
-  titleLower.includes("back") ||
-  titleLower.includes("profile")
-) {
-  return;
-}
+        // Strict URL deduplication boundary check
+        if (docUrl && processedUrls.has(docUrl.toLowerCase())) {
+          return;
+        }
 
         docs.push({
           submissionId: item._id,
-          // Binds to the actual nested item _id created inside your documents schema array
-          documentType: `documents.${doc._id}`,
+          // Binds explicitly to the array index layout position for zero dependency on _id fields
+          documentType: `documents.${index}`,
           type: doc.type || "Supporting Document",
           applicant,
           status: doc.status || "pending",
           file: doc.file,
         });
+
+        // Add to tracking pool so downstream elements can't repeat it
+        if (docUrl) {
+          processedUrls.add(docUrl.toLowerCase());
+        }
       });
     }
   });
@@ -113,32 +113,30 @@ export const updateDocumentStatus = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Target onboarding entry reference not found");
   }
 
-  // Handle embedded nested document selection arrays ("documents.65ef49a...")
+  // Handle embedded nested document selection arrays ("documents.0")
   if (documentType.includes(".")) {
-    const [arrayField, subDocId] = documentType.split(".");
+    const [arrayField, arrayIndexStr] = documentType.split(".");
+    const index = parseInt(arrayIndexStr, 10);
 
-    if (!submission[arrayField] || typeof submission[arrayField].id !== "function") {
+    if (!Array.isArray(submission[arrayField])) {
       throw new ApiError(400, `Schema property '${arrayField}' is not an accessible subdocument array`);
     }
 
-    const targetSubDoc = submission[arrayField].id(subDocId);
+    // Safe retrieval using the array index instead of the missing database _id lookup function
+    const targetSubDoc = submission[arrayField][index];
     if (!targetSubDoc) {
-      throw new ApiError(404, `Document item with database ID [${subDocId}] was not found`);
+      throw new ApiError(404, `Document item at index position [${index}] was not found`);
     }
 
     targetSubDoc.status = status;
     submission.markModified(arrayField);
   } else {
-    // Handle root schema structural positions directly ("idFront", "idBack", "profileImage")
-    if (documentType === "profileImage") {
-      throw new ApiError(400, "Profile Image does not contain a status property inside your database schema");
-    }
-
-    if (!submission[documentType]) {
+    // Handle root structural assets ("idFront", "idBack", "profileImage")
+    if (!submission[documentType] || !submission[documentType].file) {
       throw new ApiError(400, `The target asset field '${documentType}' is uninitialized or missing structure`);
     }
 
-    // Safely sets status on idFront or idBack directly alongside their file object
+    // Safely sets status fields universally across your root documents
     submission[documentType].status = status;
     submission.markModified(documentType);
   }
