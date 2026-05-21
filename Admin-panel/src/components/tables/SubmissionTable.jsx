@@ -89,7 +89,7 @@ export default function SubmissionTable({ submissions, title, isApprovedPage, fi
     fontSize: "0.78rem",
     fontWeight: "500",
     color: "#333",
-    width: { xs: "100%", sm: "auto" }, // Expands beautifully on thin viewports
+    width: { xs: "100%", sm: "auto" },
     "& .MuiSelect-select": { py: 0.75, pl: 1.5, pr: "32px !important" },
     "& .MuiOutlinedInput-notchedOutline": { borderColor: "#e5e7eb" },
     "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#d1d5db" },
@@ -100,7 +100,7 @@ export default function SubmissionTable({ submissions, title, isApprovedPage, fi
     <>
       <Card sx={{ borderRadius: "16px", boxShadow: "0px 1px 3px rgba(0,0,0,0.05)", border: "1px solid #f3f4f6", bgcolor: "#fff", overflow: "hidden" }}>
         
-        {/* Optimized Header Area for Responsive Flow */}
+        {/* Header Block */}
         <Box p={3} display="flex" flexDirection={{ xs: "column", lg: "row" }} gap={2} justifyContent="space-between" alignItems={{ xs: "stretch", lg: "center" }}>
           <Typography variant="subtitle1" fontWeight="700" sx={{ color: "#111827", fontSize: "0.95rem" }}>
             {title || "All Submissions"}
@@ -161,12 +161,11 @@ export default function SubmissionTable({ submissions, title, isApprovedPage, fi
           )}
         </Box>
 
-        {/* ── UNIFIED TABLE VIEW WITH MINIMAL SCROLLBAR AESTHETICS ── */}
+        {/* ── UNIFIED TABLE VIEW WITH SCROLLBAR OVERRIDES ── */}
         <TableContainer 
           sx={{ 
             width: "100%", 
             overflowX: "auto",
-            // Clean webkit scrollbar overrides so it matches a high-end dashboard
             "&::-webkit-scrollbar": { height: "6px" },
             "&::-webkit-scrollbar-track": { bgcolor: "#f9fafb" },
             "&::-webkit-scrollbar-thumb": { bgcolor: "#e5e7eb", borderRadius: "10px" },
@@ -187,79 +186,89 @@ export default function SubmissionTable({ submissions, title, isApprovedPage, fi
             </TableHead>
 
             <TableBody>
-              {submissions.map((item) => (
-                <TableRow
-                  key={item._id || item.id || item.email}
-                  onClick={() => openDrawer(item)}
-                  sx={{ 
-                    cursor: "pointer", 
-                    "&:hover": { bgcolor: "#f9fafb" },
-                    "& td": { borderBottom: "1px solid #f3f4f6", py: 2 } 
-                  }}
-                >
-                  <TableCell>
-                    <Box display="flex" alignItems="center" gap={1.5}>
-                      <Avatar sx={{ bgcolor: item.avatarColor || "#2563eb", width: 32, height: 32, fontSize: "0.78rem", fontWeight: "700" }}>
-                        {(item.firstName?.[0] || item.name?.[0] || "?")}
-                        {(item.lastName?.[0] || "")}
-                      </Avatar>
+              {submissions.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
+                    <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" gap={1.5}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#f9fafb', border: '1px dashed #e5e7eb', borderRadius: '12px', width: 56, height: 56, color: '#9ca3af' }}>
+                        <ManageSearchRounded sx={{ fontSize: 28 }} />
+                      </Box>
                       <Box>
-                        <Typography variant="body2" fontWeight="600" sx={{ color: "#111827", lineHeight: 1.2 }}>
-                          {item.firstName ? `${item.firstName} ${item.lastName || ""}` : item.name || "Unknown"}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: "#6b7280", display: "block", mt: 0.25 }}>
-                          {item.email}
-                        </Typography>
+                        <Typography variant="body2" fontWeight="600" sx={{ color: "#374151" }}>No submissions found</Typography>
+                        <Typography variant="caption" sx={{ color: "#6b7280" }}>There are no applications matching this category yet.</Typography>
                       </Box>
                     </Box>
                   </TableCell>
-
-                  <TableCell>
-                    <TypeChip type={item.accountType || item.type} />
-                  </TableCell>
-
-                  <TableCell>
-                    <Typography variant="caption" sx={{
-                      bgcolor: "#f9fafb", px: 1, py: 0.5, borderRadius: "6px", fontWeight: "600",
-                      border: "1px solid #e5e7eb", fontFamily: "monospace", color: "#374151"
-                    }}>
-                      {item._id ? `REF-${item._id.toString().slice(-5).toUpperCase()}` : item.ref || "—"}
-                    </Typography>
-                  </TableCell>
-
-                  <TableCell sx={{ fontSize: "0.8rem", color: "#111827", fontWeight: "500", whiteSpace: "nowrap" }}>
-                    {item.submittedAt
-                      ? new Date(item.submittedAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
-                      : item.submitted || "—"}
-                  </TableCell>
-
-                  <TableCell width="160px">
-                    <Box display="flex" alignItems="center" gap={1.5}>
-                      <LinearProgress
-                        variant="determinate"
-                        value={item.riskScore || 0}
-                        sx={{
-                          flexGrow: 1, height: 5, borderRadius: 2, bgcolor: "#f3f4f6",
-                          "& .MuiLinearProgress-bar": { backgroundColor: getRiskColor(item.riskScore) },
-                        }}
-                      />
-                      <Typography variant="caption" fontWeight="700" sx={{ color: getRiskColor(item.riskScore), minWidth: 16 }}>
-                        {item.riskScore || 0}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-
-                  <TableCell>
-                    {renderStatus(item.status)}
-                  </TableCell>
-
-                  <TableCell align="center" onClick={(e) => e.stopPropagation()}>
-                    <IconButton size="small" onClick={(e) => openMenu(e, item)} sx={{ border: "1px solid #e5e7eb", borderRadius: "8px", p: 0.5, color: "#6b7280" }}>
-                      <MoreHorizRounded fontSize="small" />
-                    </IconButton>
-                  </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                submissions.map((item) => (
+                  <TableRow
+                    key={item._id || item.id || item.email}
+                    onClick={() => openDrawer(item)}
+                    sx={{ 
+                      cursor: "pointer", 
+                      "&:hover": { bgcolor: "#f9fafb" },
+                      "& td": { borderBottom: "1px solid #f3f4f6", py: 2 } 
+                    }}
+                  >
+                    <TableCell>
+                      <Box display="flex" alignItems="center" gap={1.5}>
+                        <Avatar sx={{ bgcolor: item.avatarColor || "#2563eb", width: 32, height: 32, fontSize: "0.78rem", fontWeight: "700" }}>
+                          {(item.firstName?.[0] || item.name?.[0] || "?")}
+                          {(item.lastName?.[0] || "")}
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body2" fontWeight="600" sx={{ color: "#111827", lineHeight: 1.2 }}>
+                            {item.firstName ? `${item.firstName} ${item.lastName || ""}` : item.name || "Unknown"}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: "#6b7280", display: "block", mt: 0.25 }}>
+                            {item.email}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </TableCell>
+
+                    <TableCell>
+                      <TypeChip type={item.accountType || item.type} />
+                    </TableCell>
+
+                    <TableCell>
+                      <Typography variant="caption" sx={{ bgcolor: "#f9fafb", px: 1, py: 0.5, borderRadius: "6px", fontWeight: "600", border: "1px solid #e5e7eb", fontFamily: "monospace", color: "#374151" }}>
+                        {item._id ? `REF-${item._id.toString().slice(-5).toUpperCase()}` : item.ref || "—"}
+                      </Typography>
+                    </TableCell>
+
+                    <TableCell sx={{ fontSize: "0.8rem", color: "#111827", fontWeight: "500", whiteSpace: "nowrap" }}>
+                      {item.submittedAt
+                        ? new Date(item.submittedAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+                        : item.submitted || "—"}
+                    </TableCell>
+
+                    <TableCell width="160px">
+                      <Box display="flex" alignItems="center" gap={1.5}>
+                        <LinearProgress
+                          variant="determinate"
+                          value={item.riskScore || 0}
+                          sx={{ flexGrow: 1, height: 5, borderRadius: 2, bgcolor: "#f3f4f6", "& .MuiLinearProgress-bar": { backgroundColor: getRiskColor(item.riskScore) } }}
+                        />
+                        <Typography variant="caption" fontWeight="700" sx={{ color: getRiskColor(item.riskScore), minWidth: 16 }}>
+                          {item.riskScore || 0}
+                        </Typography>
+                      </Box>
+                    </TableCell>
+
+                    <TableCell>
+                      {renderStatus(item.status)}
+                    </TableCell>
+
+                    <TableCell align="center" onClick={(e) => e.stopPropagation()}>
+                      <IconButton size="small" onClick={(e) => openMenu(e, item)} sx={{ border: "1px solid #e5e7eb", borderRadius: "8px", p: 0.5, color: "#6b7280" }}>
+                        <MoreHorizRounded fontSize="small" />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>
