@@ -31,6 +31,52 @@ export default function Dashboard() {
     fetchStats();
   }, []);
 
+  // 1. Get the current selected timeframe from your dropdown state (e.g., 7, 30, 90)
+const daysRange = parseInt(chartDays, 10) || 30; 
+
+// 2. Generate real chart data dynamically based on actual submissions
+const chartData = useMemo(() => {
+  const today = new Date();
+  today.setHours(23, 59, 59, 999); // Snap to the end of today for accurate daily buckets
+
+  // Initialize an array of objects for each day in the range
+  const dataMap = Array.from({ length: daysRange }).map((_, i) => {
+    const d = new Date();
+    d.setDate(today.getDate() - (daysRange - 1 - i));
+    
+    // Format label matching Indian English locale or your preference (e.g., "22 Apr")
+    const label = d.toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+    });
+
+    return {
+      date: label,
+      rawDateStr: d.toDateString(), // Used for exact date matching
+      submissions: 0,
+    };
+  });
+
+  // Populate actual counts from the submissions array
+  if (Array.isArray(submissions)) {
+    submissions.forEach((sub) => {
+      // Fallback chain for timestamp fields
+      const dateSource = sub.createdAt || sub.submittedAt;
+      if (!dateSource) return;
+
+      const subDateStr = new Date(dateSource).toDateString();
+      
+      // Find the corresponding day bucket
+      const bucket = dataMap.find((day) => day.rawDateStr === subDateStr);
+      if (bucket) {
+        bucket.submissions++;
+      }
+    });
+  }
+
+  return dataMap;
+}, [submissions, chartDays]);
+
   return (
     // 1. Added clean global page padding (24px) to separate everything from the sidebar/navbar edges
     <Box sx={{ width: "100%", p: { xs: 2, sm: 3 }, bgcolor: "#f9fafb", minHeight: "100vh" }}>
