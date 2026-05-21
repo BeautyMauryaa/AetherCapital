@@ -115,6 +115,47 @@ export const getSubmission = asyncHandler(async (req, res) => {
   );
 });
 
+export const updateDocumentStatus = asyncHandler(async (req, res) => {
+
+  const { documentType, status } = req.body;
+
+  const allowedStatuses = [
+    "pending",
+    "verified",
+    "rejected",
+  ];
+
+  if (!allowedStatuses.includes(status)) {
+    throw new ApiError(
+      400,
+      "Invalid document status"
+    );
+  }
+
+  const submission = await Onboarding.findById(req.params.id);
+
+  if (!submission) {
+    throw new ApiError(404, "Submission not found");
+  }
+
+  if (!submission[documentType]) {
+    throw new ApiError(400, "Document not found");
+  }
+
+  submission[documentType].status = status;
+
+  await submission.save();
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      submission,
+      "Document status updated"
+    )
+  );
+
+});
+
 // ─── PATCH /api/admin/submissions/:id/status ─────────────────────────────────
 export const updateStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;
