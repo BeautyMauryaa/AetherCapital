@@ -142,7 +142,13 @@ export default function DocumentCard({
         <Box display="flex" gap={1}>
           <IconButton
             size="small"
-            onClick={() => handleUpdate("approved", "Document verified", "Failed to approve document")}
+        onClick={() =>
+  handleUpdate(
+    "verified",
+    "Document verified",
+    "Failed to verify document"
+  )
+}
             sx={{
               bgcolor: "#10b981",
               color: "#ffffff",
