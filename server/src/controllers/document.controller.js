@@ -57,14 +57,15 @@ export const getAllDocuments = asyncHandler(async (req, res) => {
     if (Array.isArray(item.documents) && item.documents.length > 0) {
       item.documents.forEach((doc, index) => {
         if (!doc?.file) return;
-        docs.push({
-          submissionId: item._id,
-          documentType: `documents.${index}`,
-          type: doc.type || "Supporting Document",
-          applicant,
-          status: doc.status || "pending",
-          file: doc.file,
-        });
+        d// In getAllDocuments, the compliance docs loop:
+docs.push({
+  submissionId: item._id,
+  documentType: `documents.${index}`,
+  type:         doc.documentType || "Supporting Document",  // was: doc.type
+  applicant,
+  status:       doc.status || "pending",
+  file:         doc.file,
+});
       });
     }
   });
