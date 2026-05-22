@@ -107,13 +107,7 @@ export const useOnboardingStore = create(
 
           // 3. Fallback structure: Append top-level keys directly to the payload
           // if your backend relies on a custom multer configuration parsing setup.
-          Object.entries(textData).forEach(([k, v]) => {
-            if (typeof v === "object" && v !== null) {
-              fd.append(k, JSON.stringify(v));
-            } else {
-              fd.append(k, String(v));
-            }
-          });
+         // fd.append("formData", JSON.stringify(textData));
 
           // Keep the core stringified wrapper block as well to ensure total controller compatibility
           fd.append("formData", JSON.stringify(textData));
