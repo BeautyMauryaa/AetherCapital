@@ -12,89 +12,65 @@ export const getAllDocuments = asyncHandler(async (req, res) => {
     const applicant =
       `${item.firstName || ""} ${item.lastName || ""}`.trim() ||
       item.companyName ||
+      item.legalName ||
       "Unknown";
 
-    // Track processed files by their Google Drive directUrl / webViewLink to prevent duplications
-    const processedUrls = new Set();
-    const trackUrl = (driveFileObj) => {
-      if (!driveFileObj) return;
-      const url = driveFileObj.directUrl || driveFileObj.webViewLink;
-      if (url) processedUrls.add(url.toLowerCase());
-    };
-
-    // // Populate tracking set with known explicitly defined root-level assets
-    // if (item.idFront?.file)   trackUrl(item.idFront.file);
-    // if (item.idBack?.file)    trackUrl(item.idBack.file);
-    // if (item.profileImage?.file) trackUrl(item.profileImage.file);
-
     // 1. ID FRONT
-    if (item.idFront && item.idFront.file) {
+    if (item.idFront?.file) {
       docs.push({
         submissionId: item._id,
         documentType: "idFront",
         type: "ID Front",
         applicant,
         status: item.idFront.status || "pending",
-        file: item.idFront.file, 
+        file: item.idFront.file,
       });
     }
 
     // 2. ID BACK
-    if (item.idBack && item.idBack.file) {
+    if (item.idBack?.file) {
       docs.push({
         submissionId: item._id,
         documentType: "idBack",
         type: "ID Back",
         applicant,
         status: item.idBack.status || "pending",
-        file: item.idBack.file, 
+        file: item.idBack.file,
       });
     }
 
-    // 3. PROFILE IMAGE (Reflects your clean updated schema structure)
-    if (item.profileImage && item.profileImage.file) {
+    // 3. PROFILE IMAGE
+    if (item.profileImage?.fileId) {
       docs.push({
         submissionId: item._id,
         documentType: "profileImage",
         type: "Profile Image",
         applicant,
-        status: item.profileImage.status || "pending", 
-        file: item.profileImage.file, 
+        status: "pending",
+        file: item.profileImage,
       });
     }
 
-    // 4. EXTRA DOCUMENTS (Deduplicated cleanly by structural URL verification)
-    if (item.documents?.length > 0) {
+    // 4. COMPLIANCE DOCUMENTS (business / enterprise)
+    // These are uploaded via DocumentChecklist with types like
+    // "Certificate of Incorporation", "Tax Registration", etc.
+    if (Array.isArray(item.documents) && item.documents.length > 0) {
       item.documents.forEach((doc, index) => {
-        if (!doc.file) return;
-
-        const docUrl = doc.file.directUrl || doc.file.webViewLink;
-
-        // Strict URL deduplication boundary check
-        if (docUrl && processedUrls.has(docUrl.toLowerCase())) {
-          return;
-        }
-
+        if (!doc?.file) return;
         docs.push({
           submissionId: item._id,
-          // Binds explicitly to the array index layout position for zero dependency on _id fields
           documentType: `documents.${index}`,
           type: doc.type || "Supporting Document",
           applicant,
           status: doc.status || "pending",
           file: doc.file,
         });
-
-        // Add to tracking pool so downstream elements can't repeat it
-        if (docUrl) {
-          processedUrls.add(docUrl.toLowerCase());
-        }
       });
     }
   });
 
   return res.status(200).json(
-    new ApiResponse(200, docs, "Documents matrix fetched successfully")
+    new ApiResponse(200, docs, "Documents fetched successfully")
   );
 });
 
@@ -110,40 +86,40 @@ export const updateDocumentStatus = asyncHandler(async (req, res) => {
 
   const submission = await Onboarding.findById(id);
   if (!submission) {
-    throw new ApiError(404, "Target onboarding entry reference not found");
+    throw new ApiError(404, "Submission not found");
   }
 
-  // Handle embedded nested document selection arrays ("documents.0")
-  if (documentType.includes(".")) {
-    const [arrayField, arrayIndexStr] = documentType.split(".");
-    const index = parseInt(arrayIndexStr, 10);
+  if (documentType.startsWith("documents.")) {
+    // Compliance doc at index e.g. "documents.0"
+    const index = parseInt(documentType.split(".")[1], 10);
 
-    if (!Array.isArray(submission[arrayField])) {
-      throw new ApiError(400, `Schema property '${arrayField}' is not an accessible subdocument array`);
+    if (!Array.isArray(submission.documents) || !submission.documents[index]) {
+      throw new ApiError(404, `Document at index ${index} not found`);
     }
 
-    // Safe retrieval using the array index instead of the missing database _id lookup function
-    const targetSubDoc = submission[arrayField][index];
-    if (!targetSubDoc) {
-      throw new ApiError(404, `Document item at index position [${index}] was not found`);
-    }
+    submission.documents[index].status = status;
+    submission.markModified("documents");
 
-    targetSubDoc.status = status;
-    submission.markModified(arrayField);
+  } else if (documentType === "idFront") {
+    if (!submission.idFront) throw new ApiError(400, "idFront not found");
+    submission.idFront.status = status;
+    submission.markModified("idFront");
+
+  } else if (documentType === "idBack") {
+    if (!submission.idBack) throw new ApiError(400, "idBack not found");
+    submission.idBack.status = status;
+    submission.markModified("idBack");
+
+  } else if (documentType === "profileImage") {
+    // profileImage is a plain DriveFileSchema — no status field in schema
+    // Nothing to update status-wise; just acknowledge
   } else {
-    // Handle root structural assets ("idFront", "idBack", "profileImage")
-    if (!submission[documentType] || !submission[documentType].file) {
-      throw new ApiError(400, `The target asset field '${documentType}' is uninitialized or missing structure`);
-    }
-
-    // Safely sets status fields universally across your root documents
-    submission[documentType].status = status;
-    submission.markModified(documentType);
+    throw new ApiError(400, `Unknown documentType: ${documentType}`);
   }
 
   await submission.save();
 
   return res.status(200).json(
-    new ApiResponse(200, submission, "Document validation status updated successfully")
+    new ApiResponse(200, submission, "Document status updated successfully")
   );
 });
