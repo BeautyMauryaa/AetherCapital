@@ -31,45 +31,30 @@ export const useOnboardingStore = create(
       clearSubmitError: () => set({ submitError: null }),
 
       // ── updateForm ──────────────────────────────────────────────────────────
-      updateForm: (data) => {
-        const textData = {};
+     updateForm: (data) => {
+  const textData = {};
 
-        for (const [key, val] of Object.entries(data)) {
-          if (val instanceof File) {
-            fileStore.set(key, val);
-            textData[`${key}__name`] = val.name;
-            continue;
-          }
+  for (const [key, val] of Object.entries(data)) {
 
-          if (key === "documents") {
-            if (val && typeof val === "object" && !Array.isArray(val)) {
-              const existingDocs = get().formData.documents || {};
-              const merged = { ...existingDocs };
+    if (val instanceof File) {
+      fileStore.set(key, val);
+      textData[`${key}__name`] = val.name;
+      continue;
+    }
 
-              for (const [docId, entry] of Object.entries(val)) {
-                if (entry instanceof File) {
-                  const existing = fileStore.getMany("documents__files") || [];
-                  const map = Object.fromEntries(existing.map((e) => [e.docId, e]));
-                  map[docId] = { docId, file: entry };
-                  fileStore.setMany("documents__files", Object.values(map));
-                  merged[docId] = { name: entry.name };
-                } else if (entry && typeof entry === "object") {
-                  merged[docId] = { ...(existingDocs[docId] || {}), ...entry };
-                } else if (typeof entry === "string") {
-                  merged[docId] = { ...(existingDocs[docId] || {}), name: entry };
-                }
-              }
-              textData["documents"] = merged;
-            }
-            continue;
-          }
+    // ✅ NEW CLEAN DOCUMENTS LOGIC
+    if (key === "documents") {
+      textData["documents"] = val;
+      continue;
+    }
 
-          textData[key] = val;
-        }
+    textData[key] = val;
+  }
 
-        set((s) => ({ formData: { ...s.formData, ...textData } }));
-      },
-
+  set((s) => ({
+    formData: { ...s.formData, ...textData }
+  }));
+},
       // ── submitApplication ───────────────────────────────────────────────────
       submitApplication: async () => {
         set({ isSubmitting: true, submitError: null });
