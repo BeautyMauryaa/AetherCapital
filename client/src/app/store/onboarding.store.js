@@ -1,5 +1,3 @@
-
-
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { fileStore } from "./fileStore.js";
@@ -8,8 +6,16 @@ const BASE_URL =
   import.meta.env.VITE_API_URL?.replace(/\/$/, "") ||
   "http://localhost:5000/api";
 
-const SIG_KEY       = "aether_signature";
+const SIG_KEY = "aether_signature";
 const getSessionSig = () => sessionStorage.getItem(SIG_KEY) || null;
+
+const DOC_LABELS = {
+  incorp_cert: "Certificate of Incorporation",
+  tax_id: "Tax Registration",
+  proof_addr: "Proof of Address",
+  ubo_registry: "Beneficial Owner Declaration",
+};
+const docKeyToLabel = (key) => DOC_LABELS[key] || key.replace(/_/g, " ");
 
 export const useOnboardingStore = create(
   persist(
@@ -29,34 +35,27 @@ export const useOnboardingStore = create(
         }),
 
       prevStep: () => set((s) => ({ step: Math.max(s.step - 1, 1) })),
-      setStep:  (step) => set({ step }),
+      setStep: (step) => set({ step }),
       clearSubmitError: () => set({ submitError: null }),
 
       // ── updateForm ──────────────────────────────────────────────────────────
       updateForm: (data) => {
         const textData = {};
-
         for (const [key, val] of Object.entries(data)) {
           if (val instanceof File) {
             fileStore.set(key, val);
             textData[`${key}__name`] = val.name;
             continue;
           }
-
           if (key === "documents") {
             textData["documents"] = val;
             continue;
           }
-
           textData[key] = val;
         }
-
-        set((s) => ({
-          formData: { ...s.formData, ...textData }
-        }));
+        set((s) => ({ formData: { ...s.formData, ...textData } }));
       },
 
-      // ── submitApplication ───────────────────────────────────────────────────
       // ── submitApplication ───────────────────────────────────────────────────
       submitApplication: async () => {
         set({ isSubmitting: true, submitError: null });
@@ -66,7 +65,7 @@ export const useOnboardingStore = create(
           const signatureData = formData.signatureData || getSessionSig();
           const fd = new FormData();
 
-          // 1. Append absolute files from binary fileStore
+          // 1. Append binary files from fileStore
           ["profileImage", "idFront", "idBack"].forEach((key) => {
             const file = fileStore.get(key);
             if (file instanceof File) fd.append(key, file);
@@ -81,36 +80,54 @@ export const useOnboardingStore = create(
             });
 
           const profileImageB64 =
-            await toBase64(fileStore.get("profileImage")) ||
-            formData.profileImage__preview || null;
+            (await toBase64(fileStore.get("profileImage"))) ||
+            formData.profileImage__preview ||
+            null;
 
           const idFrontB64 =
-            await toBase64(fileStore.get("idFront")) ||
-            formData.idFront__preview || null;
+            (await toBase64(fileStore.get("idFront"))) ||
+            formData.idFront__preview ||
+            null;
 
           const idBackB64 =
-            await toBase64(fileStore.get("idBack")) ||
-            formData.idBack__preview || null;
+            (await toBase64(fileStore.get("idBack"))) ||
+            formData.idBack__preview ||
+            null;
 
-          // 2. Build explicit object data maps
+          // 2. Build clean text payload map
           const textData = {};
           for (const [key, val] of Object.entries(formData)) {
             if (
               key.endsWith("__name") ||
               key.endsWith("__preview") ||
               key === "signatureData"
-            ) continue;
-
+            )
+              continue;
             textData[key] = val;
           }
           if (signatureData) textData.signatureData = signatureData;
 
-          // 3. Fallback structure: Append top-level keys directly to the payload
-          // if your backend relies on a custom multer configuration parsing setup.
-         // fd.append("formData", JSON.stringify(textData));
+          // Keep original documents object.
+          // Backend will transform it.
+          const rawDocs = textData.documents || {};
 
-          // Keep the core stringified wrapper block as well to ensure total controller compatibility
-          fd.append("formData", JSON.stringify(textData));
+          // 3. Append all fields — skip documents entirely (sent via bundle only)
+          Object.entries(textData).forEach(([k, v]) => {
+            if (k === "documents") return; // excluded — sent inside formData bundle
+            if (typeof v === "object" && v !== null) {
+              fd.append(k, JSON.stringify(v));
+            } else {
+              fd.append(k, String(v));
+            }
+          });
+
+          // 4. Bundle — documents as proper array
+          // const textDataForBundle = { ...textData, documents: docsArray };
+          const textDataForBundle = {
+            ...textData,
+            documents: rawDocs,
+          };
+          fd.append("formData", JSON.stringify(textDataForBundle));
 
           const res = await fetch(`${BASE_URL}/onboarding/submit`, {
             method: "POST",
@@ -123,21 +140,29 @@ export const useOnboardingStore = create(
           }
 
           const responseData = await res.json();
-          
-          // ── EXPLICIT DEBUGGING INTERCEPTOR ──────────────────────────────────
+
           if (!res.ok) {
-            console.error("🚨 CRITICAL BACKEND VALIDATION FAILURE OBJECT:", responseData);
-            throw new Error(responseData.message || responseData.error || "Submission failed");
+            console.error(
+              "🚨 CRITICAL BACKEND VALIDATION FAILURE OBJECT:",
+              responseData,
+            );
+            console.error(
+              "🔍 ERRORS DETAIL:",
+              JSON.stringify(responseData.errors, null, 2),
+            );
+            throw new Error(
+              responseData.message || responseData.error || "Submission failed",
+            );
           }
 
           const submissionResult = {
-            submissionId:    responseData.data?.id || responseData._id,
-            submittedAt:     new Date().toISOString(),
-            applicantName:   formData.firstName
+            submissionId: responseData.data?.id || responseData._id,
+            submittedAt: new Date().toISOString(),
+            applicantName: formData.firstName
               ? `${formData.firstName} ${formData.lastName || ""}`.trim()
               : formData.companyName || formData.legalName || "Applicant",
-            email:           formData.email,
-            accountType:     formData.accountType,
+            email: formData.email,
+            accountType: formData.accountType,
             signatureData,
             profileImageB64,
             idFrontB64,
@@ -147,14 +172,14 @@ export const useOnboardingStore = create(
           fileStore.clear();
 
           set({
-            isSubmitting:    false,
-            isSubmitted:     true,
-            submitError:     null,
+            isSubmitting: false,
+            isSubmitted: true,
+            submitError: null,
             submissionResult,
             formData: Object.fromEntries(
               Object.entries(formData).filter(
-                ([k]) => k !== "signatureData" && !k.endsWith("__preview")
-              )
+                ([k]) => k !== "signatureData" && !k.endsWith("__preview"),
+              ),
             ),
           });
         } catch (err) {
@@ -168,13 +193,16 @@ export const useOnboardingStore = create(
         const { submissionResult, formData } = get();
         const result = submissionResult || {};
 
-        const { default: jsPDF }       = await import("jspdf");
+        const { default: jsPDF } = await import("jspdf");
         const { default: html2canvas } = await import("html2canvas");
 
         const signatureData = result.signatureData || getSessionSig();
-        const riskScore     = Object.values(formData.answers || {}).filter(v => v === true).length * 12.5;
-        const riskTier      = riskScore === 0 ? "Low" : riskScore <= 40 ? "Medium" : "High";
-        const submittedAt   = result.submittedAt
+        const riskScore =
+          Object.values(formData.answers || {}).filter((v) => v === true)
+            .length * 12.5;
+        const riskTier =
+          riskScore === 0 ? "Low" : riskScore <= 40 ? "Medium" : "High";
+        const submittedAt = result.submittedAt
           ? new Date(result.submittedAt).toLocaleString()
           : new Date().toLocaleString();
 
@@ -186,10 +214,11 @@ export const useOnboardingStore = create(
                </div>`
             : `<p style="color:#aaa;font-size:12px;margin:0">${label}: Not available</p>`;
 
-        const docs    = formData.documents || {};
+        const docs = formData.documents || {};
         const docRows = Object.entries(docs)
           .filter(([, d]) => d?.name)
-          .map(([id, d]) => `
+          .map(
+            ([id, d]) => `
             <tr>
               <td style="padding:7px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;text-transform:capitalize">
                 ${id.replace(/_/g, " ")}
@@ -198,7 +227,9 @@ export const useOnboardingStore = create(
                 <span style="color:#10b981;font-weight:600">✓ </span>
                 <span style="color:#1a1a2e">${d.name}</span>
               </td>
-            </tr>`).join("");
+            </tr>`,
+          )
+          .join("");
 
         const sigHtml = signatureData
           ? `<div style="width:260px;height:90px;border:1px solid #eee;border-radius:8px;background:#fff;
@@ -210,11 +241,18 @@ export const useOnboardingStore = create(
 
         const wrap = document.createElement("div");
         wrap.style.cssText = [
-          "position:absolute", "top:-99999px", "left:0",
-          "width:794px", "padding:56px 60px", "background:#fff",
+          "position:absolute",
+          "top:-99999px",
+          "left:0",
+          "width:794px",
+          "padding:56px 60px",
+          "background:#fff",
           "color:#1a1a2e",
           "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
-          "font-size:14px", "line-height:1.6", "box-sizing:border-box", "z-index:-9999",
+          "font-size:14px",
+          "line-height:1.6",
+          "box-sizing:border-box",
+          "z-index:-9999",
         ].join(";");
 
         wrap.innerHTML = `
@@ -223,9 +261,11 @@ export const useOnboardingStore = create(
               <div style="font-size:26px;font-weight:700;color:#7c3aed;margin-bottom:4px">Aether Capital</div>
               <div style="color:#888;font-size:13px">Onboarding Application — Submission Receipt</div>
             </div>
-            ${result.profileImageB64
-              ? `<img src="${result.profileImageB64}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid #7c3aed" />`
-              : ""}
+            ${
+              result.profileImageB64
+                ? `<img src="${result.profileImageB64}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid #7c3aed" />`
+                : ""
+            }
           </div>
 
           <div style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#888;margin-bottom:10px;font-weight:600">Submission Details</div>
@@ -259,7 +299,9 @@ export const useOnboardingStore = create(
             <tr><td style="color:#aaa;padding:4px 0">2FA</td><td>${formData.twoFA ? `Enabled · ${formData.tfaMethod || ""}` : "Disabled"}</td></tr>
           </table>
 
-          ${docRows ? `
+          ${
+            docRows
+              ? `
           <div style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#888;margin-bottom:10px;font-weight:600">Documents Submitted</div>
           <table style="width:100%;border-collapse:collapse;margin-bottom:28px">
             <thead><tr style="background:#f8f8f8">
@@ -267,12 +309,14 @@ export const useOnboardingStore = create(
               <th style="text-align:left;padding:7px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#888">Status</th>
             </tr></thead>
             <tbody>${docRows}</tbody>
-          </table>` : ""}
+          </table>`
+              : ""
+          }
 
           <div style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#888;margin-bottom:10px;font-weight:600">Identity Documents</div>
           <div style="display:flex;gap:20px;margin-bottom:28px;flex-wrap:wrap">
             ${imgBlock(result.idFrontB64, "ID — Front")}
-            ${imgBlock(result.idBackB64,  "ID — Back")}
+            ${imgBlock(result.idBackB64, "ID — Back")}
           </div>
 
           <div style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#888;margin-bottom:10px;font-weight:600">Signature</div>
@@ -284,24 +328,35 @@ export const useOnboardingStore = create(
           </div>`;
 
         const pageChildren = Array.from(document.body.children);
-        pageChildren.forEach((el) => { el.style.visibility = "hidden"; });
+        pageChildren.forEach((el) => {
+          el.style.visibility = "hidden";
+        });
         document.body.appendChild(wrap);
         wrap.style.visibility = "visible";
 
         try {
           const canvas = await html2canvas(wrap, {
-            scale: 2, useCORS: true, allowTaint: true,
-            backgroundColor: "#ffffff", width: 794,
-            height: wrap.scrollHeight, windowWidth: 794,
-            scrollX: 0, scrollY: 99999,
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: "#ffffff",
+            width: 794,
+            height: wrap.scrollHeight,
+            windowWidth: 794,
+            scrollX: 0,
+            scrollY: 99999,
           });
 
-          const imgData    = canvas.toDataURL("image/jpeg", 0.92);
-          const pdf        = new jsPDF({ unit: "px", format: "a4", orientation: "portrait" });
-          const pdfW       = pdf.internal.pageSize.getWidth();
-          const pdfH       = pdf.internal.pageSize.getHeight();
-          const ratio      = pdfW / canvas.width;
-          const totalH     = canvas.height * ratio;
+          const imgData = canvas.toDataURL("image/jpeg", 0.92);
+          const pdf = new jsPDF({
+            unit: "px",
+            format: "a4",
+            orientation: "portrait",
+          });
+          const pdfW = pdf.internal.pageSize.getWidth();
+          const pdfH = pdf.internal.pageSize.getHeight();
+          const ratio = pdfW / canvas.width;
+          const totalH = canvas.height * ratio;
           const totalPages = Math.ceil(totalH / pdfH);
 
           for (let i = 0; i < totalPages; i++) {
@@ -311,7 +366,9 @@ export const useOnboardingStore = create(
 
           pdf.save(`aether-receipt-${result.submissionId || Date.now()}.pdf`);
         } finally {
-          pageChildren.forEach((el) => { el.style.visibility = ""; });
+          pageChildren.forEach((el) => {
+            el.style.visibility = "";
+          });
           document.body.removeChild(wrap);
         }
       },
@@ -320,36 +377,49 @@ export const useOnboardingStore = create(
         fileStore.clear();
         sessionStorage.removeItem(SIG_KEY);
         set({
-          step: 1, reachedStep: 1, formData: {},
-          isSubmitting: false, isSubmitted: false,
-          submitError: null, submissionResult: null,
+          step: 1,
+          reachedStep: 1,
+          formData: {},
+          isSubmitting: false,
+          isSubmitted: false,
+          submitError: null,
+          submissionResult: null,
         });
       },
     }),
     {
       name: "aether-onboarding",
       partialize: (state) => ({
-        step:        state.step,
+        step: state.step,
         reachedStep: state.reachedStep,
         isSubmitted: state.isSubmitted,
-        submissionResult: state.submissionResult ? {
-          submissionId:    state.submissionResult.submissionId,
-          submittedAt:     state.submissionResult.submittedAt,
-          applicantName:   state.submissionResult.applicantName,
-          email:           state.submissionResult.email,
-          accountType:     state.submissionResult.accountType,
-          profileImageB64: state.submissionResult.profileImageB64 || null,
-          idFrontB64:      state.submissionResult.idFrontB64      || null,
-          idBackB64:       state.submissionResult.idBackB64       || null,
-          signatureData:   state.submissionResult.signatureData   || null,
-        } : null,
+        submissionResult: state.submissionResult
+          ? {
+              submissionId: state.submissionResult.submissionId,
+              submittedAt: state.submissionResult.submittedAt,
+              applicantName: state.submissionResult.applicantName,
+              email: state.submissionResult.email,
+              accountType: state.submissionResult.accountType,
+              profileImageB64: state.submissionResult.profileImageB64 || null,
+              idFrontB64: state.submissionResult.idFrontB64 || null,
+              idBackB64: state.submissionResult.idBackB64 || null,
+              signatureData: state.submissionResult.signatureData || null,
+            }
+          : null,
         formData: Object.fromEntries(
           Object.entries(state.formData).filter(([k]) => {
             if (k === "signatureData") return false;
-            if (["profileImage__preview", "idFront__preview", "idBack__preview"].includes(k)) return true;
+            if (
+              [
+                "profileImage__preview",
+                "idFront__preview",
+                "idBack__preview",
+              ].includes(k)
+            )
+              return true;
             if (k.endsWith("__preview")) return false;
             return true;
-          })
+          }),
         ),
       }),
     },
