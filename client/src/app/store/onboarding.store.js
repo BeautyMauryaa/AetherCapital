@@ -1,279 +1,373 @@
-import Onboarding from "../models/onboarding.model.js";
-import { uploadFileToDrive } from "../services/googledrive.service.js";
-import { ApiError } from "../utils/ApiError.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
-import { asyncHandler } from "../utils/asyncHandler.js";
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { fileStore } from "./fileStore.js";
 
-// ─── Risk Score Calculator ────────────────────────────────────────────────────
-export const calculateRiskScore = ({
-  accountType,
-  country,
-  roles,
-  twoFactorEnabled,
-  questionnaire,   // object like { regulated: true, pii: false, ... }
-}) => {
-  let score = 0;
+const BASE_URL =
+  import.meta.env.VITE_API_URL?.replace(/\/$/, "") ||
+  "http://localhost:5000/api";
 
-  // Account type weight
-  if (accountType === "enterprise") score += 15;
-  else if (accountType === "business") score += 10;
-  else score += 5;
+const SIG_KEY       = "aether_signature";
+const getSessionSig = () => sessionStorage.getItem(SIG_KEY) || null;
 
-  // Sensitive roles
-  if (Array.isArray(roles)) {
-    if (roles.includes("Admin")) score += 10;
-    if (roles.includes("Billing")) score += 5;
-  }
+export const useOnboardingStore = create(
+  persist(
+    (set, get) => ({
+      step: 1,
+      reachedStep: 1,
+      formData: {},
+      isSubmitting: false,
+      isSubmitted: false,
+      submitError: null,
+      submissionResult: null,
 
-  // No 2FA is risky
-  if (!twoFactorEnabled) score += 10;
+      nextStep: () =>
+        set((s) => {
+          const next = Math.min(s.step + 1, 6);
+          return { step: next, reachedStep: Math.max(s.reachedStep, next) };
+        }),
 
-  // Questionnaire
-  if (questionnaire.regulated) score += 10;
-  if (questionnaire.pii) score += 8;
-  if (questionnaire.payments) score += 10;
-  if (questionnaire.minors_pii) score += 8;
-  if (questionnaire.soc2) score += 5;
-  if (questionnaire.crypto) score += 15;
-  if (questionnaire.sanctioned_regions) score += 20;
-  if (questionnaire.pep_services) score += 12;
-  if (questionnaire.cross_border_storage) score += 8;
+      prevStep: () => set((s) => ({ step: Math.max(s.step - 1, 1) })),
+      setStep:  (step) => set({ step }),
+      clearSubmitError: () => set({ submitError: null }),
 
-  // High-risk countries
-  if (["AF", "IR", "KP"].includes(country)) score += 25;
+      // ── updateForm ──────────────────────────────────────────────────────────
+      updateForm: (data) => {
+        const textData = {};
 
-  return Math.min(score, 100);
-};
+        for (const [key, val] of Object.entries(data)) {
+          if (val instanceof File) {
+            fileStore.set(key, val);
+            textData[`${key}__name`] = val.name;
+            continue;
+          }
 
-// ─── Helper: upload base64 string to Drive ────────────────────────────────────
-const uploadBase64ToDrive = async (base64String, fileName, mimeType, folder) => {
-  if (!base64String) return null;
-  const base64Data = base64String.replace(/^data:image\/\w+;base64,/, "");
-  const buffer = Buffer.from(base64Data, "base64");
-  return uploadFileToDrive(buffer, fileName, mimeType, folder);
-};
+          if (key === "documents") {
+            if (val && typeof val === "object" && !Array.isArray(val)) {
+              const existingDocs = get().formData.documents || {};
+              const merged = { ...existingDocs };
 
-// ─── Safe JSON parse helper ───────────────────────────────────────────────────
-const parseSafe = (val, fallback = null) => {
-  if (val === undefined || val === null) return fallback;
-  if (typeof val === "object") return val;
-  try { return JSON.parse(val); } catch { return fallback; }
-};
+              for (const [docId, entry] of Object.entries(val)) {
+                if (entry instanceof File) {
+                  const existing = fileStore.getMany("documents__files") || [];
+                  const map = Object.fromEntries(existing.map((e) => [e.docId, e]));
+                  map[docId] = { docId, file: entry };
+                  fileStore.setMany("documents__files", Object.values(map));
+                  merged[docId] = { name: entry.name };
+                } else if (entry && typeof entry === "object") {
+                  merged[docId] = { ...(existingDocs[docId] || {}), ...entry };
+                } else if (typeof entry === "string") {
+                  merged[docId] = { ...(existingDocs[docId] || {}), name: entry };
+                }
+              }
+              textData["documents"] = merged;
+            }
+            continue;
+          }
 
-// ─── Submit Onboarding ────────────────────────────────────────────────────────
-export const submitOnboarding = asyncHandler(async (req, res) => {
+          textData[key] = val;
+        }
 
-  const raw = req.body.formData ? JSON.parse(req.body.formData) : req.body;
-  const {
-    operatingHours,
-    documentLabels,
-  } = raw;
-  
-  const {
-    accountType,
-    firstName, middleName, lastName,
-    dobDay, dobMonth, dobYear,
-    gender, nationality,
-    // Address — frontend sends flat keys
-    country, address1, address2, city, state, zip, timezone,
-    sameAsPrimary, mailAddress1, mailCity, mailState, mailPostal,
-    // Step 4
-    roles, departments, permissions, twoFA, tfaMethod,
-    // Step 5 — frontend stores questionnaire answers under "answers" key
-    answers, questionnaire,
-    // Step 6
-    signatureData, agreedToTerms,
-    // Corporate fields
-    companyName, legalName, tradeName, regNumber, regDate,
-    industry, employeeRange, subsidiaryCount, parentCompany,
-    isListed, tickerSymbol,
-    // email (if captured)
-    email,
-  } = raw;
+        set((s) => ({ formData: { ...s.formData, ...textData } }));
+      },
 
-  // ── Normalise questionnaire ────────────────────────────────────────────────
-  // Frontend Step5 stores answers as formData.answers  (individual flow)
-  // or formData.questionnaire (corporate flow)
-  const rawQuestionnaire = (() => {
-    const a = parseSafe(answers,       null);
-    const q = parseSafe(questionnaire, null);
-    if (a && typeof a === "object" && !Array.isArray(a) && Object.keys(a).length > 0) return a;
-    if (q && typeof q === "object" && !Array.isArray(q) && Object.keys(q).length > 0) return q;
-    return {};
-  })();
+      // ── submitApplication ───────────────────────────────────────────────────
+      submitApplication: async () => {
+        set({ isSubmitting: true, submitError: null });
 
-  const parsedRoles       = parseSafe(roles,       []);
-  const parsedDepartments = parseSafe(departments, []);
-  const parsedPermissions = parseSafe(permissions, {});
-  const isTwoFAEnabled    = twoFA === "true" || twoFA === true;
+        try {
+          const { formData } = get();
 
-  // // ── Upload files to Drive ─────────────────────────────────────────────────
-  // const driveUploads = {};
+          const signatureData = formData.signatureData || getSessionSig();
 
-  // // FIXED: Single document block preserves labeled array structures cleanly
-  // // if (req.files?.documents?.length > 0) {
-  // //   const labels = parseSafe(documentLabels, []);
-  // const parsedDocuments = parseSafe(raw.documents, {});
+          const fd = new FormData();
 
-  //   driveUploads.documents = await Promise.all(
-  //     req.files.documents.map(async (f, index) => {
-  //       const uploaded = await uploadFileToDrive(
-  //         f.buffer,
-  //         f.originalname,
-  //         f.mimetype,
-  //         "compliance-docs"
-  //       );
+          ["profileImage", "idFront", "idBack"].forEach((key) => {
+            const file = fileStore.get(key);
+            if (file instanceof File) fd.append(key, file);
+          });
 
-  //       return {
-  //         type: labels[index] || "Document",
-  //         ...uploaded,
-  //       };
-  //     })
-  //   );
-  // }
-// ── Compliance documents already uploaded from frontend ──────────────────
-const parsedDocuments = parseSafe(raw.documents, {});
+          // const docEntries = fileStore.getMany("documents__files") || [];
+          // docEntries.forEach(({ file }) => {
+          //   if (file instanceof File) fd.append("documents", file);
+          // });
 
-const DOC_LABELS = {
-  incorp_cert: "Certificate of Incorporation",
-  tax_id: "Tax Registration",
-  proof_addr: "Proof of Address",
-  ubo_registry: "Beneficial Owner Declaration",
-};
+          const toBase64 = (file) =>
+            new Promise((resolve) => {
+              if (!(file instanceof File)) return resolve(null);
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result);
+              reader.readAsDataURL(file);
+            });
 
-driveUploads.documents = Object.entries(parsedDocuments).map(
-  ([key, value]) => ({
-    type: DOC_LABELS[key] || key,
+          // ── FIX: fallback to formData __preview if fileStore is empty ──
+          const profileImageB64 =
+            await toBase64(fileStore.get("profileImage")) ||
+            formData.profileImage__preview || null;
 
-    file: {
-      fileId: value.fileId,
-      fileName: value.name,
-      directUrl: value.driveUrl,
-      webViewLink: value.driveViewLink,
-      mimeType: value.mimeType,
+          const idFrontB64 =
+            await toBase64(fileStore.get("idFront")) ||
+            formData.idFront__preview || null;
+
+          const idBackB64 =
+            await toBase64(fileStore.get("idBack")) ||
+            formData.idBack__preview || null;
+
+          const textData = {};
+          for (const [key, val] of Object.entries(formData)) {
+            if (
+              key.endsWith("__name") ||
+              key.endsWith("__preview") ||
+              key === "documents__names" ||
+              key === "signatureData"
+            ) continue;
+            if (Array.isArray(val) || (typeof val === "object" && val !== null)) {
+              textData[key] = JSON.stringify(val);
+            } else {
+              textData[key] = val;
+            }
+          }
+          if (signatureData) textData.signatureData = signatureData;
+
+          fd.append("formData", JSON.stringify(textData));
+
+          const res = await fetch(`${BASE_URL}/onboarding/submit`, {
+            method: "POST",
+            body: fd,
+          });
+
+          const contentType = res.headers.get("content-type");
+          if (!contentType?.includes("application/json")) {
+            throw new Error(`Server error ${res.status}: ${res.statusText}`);
+          }
+
+          const responseData = await res.json();
+          if (!res.ok) throw new Error(responseData.message || "Submission failed");
+
+          const submissionResult = {
+            submissionId:    responseData.data?.id || responseData._id,
+            submittedAt:     new Date().toISOString(),
+            applicantName:   formData.firstName
+              ? `${formData.firstName} ${formData.lastName || ""}`.trim()
+              : formData.companyName || formData.legalName || "Applicant",
+            email:           formData.email,
+            accountType:     formData.accountType,
+            signatureData,
+            profileImageB64,
+            idFrontB64,
+            idBackB64,
+          };
+
+          fileStore.clear();
+
+          set({
+            isSubmitting:    false,
+            isSubmitted:     true,
+            submitError:     null,
+            submissionResult,
+            formData: Object.fromEntries(
+              Object.entries(formData).filter(
+                ([k]) => k !== "signatureData" && !k.endsWith("__preview")
+              )
+            ),
+          });
+        } catch (err) {
+          console.error("Submit error:", err.message);
+          set({ isSubmitting: false, submitError: err.message });
+        }
+      },
+
+      // ── generateReceipt ─────────────────────────────────────────────────────
+      generateReceipt: async () => {
+        const { submissionResult, formData } = get();
+        const result = submissionResult || {};
+
+        const { default: jsPDF }       = await import("jspdf");
+        const { default: html2canvas } = await import("html2canvas");
+
+        const signatureData = result.signatureData || getSessionSig();
+        const riskScore     = Object.values(formData.answers || {}).filter(v => v === true).length * 12.5;
+        const riskTier      = riskScore === 0 ? "Low" : riskScore <= 40 ? "Medium" : "High";
+        const submittedAt   = result.submittedAt
+          ? new Date(result.submittedAt).toLocaleString()
+          : new Date().toLocaleString();
+
+        const imgBlock = (b64, label) =>
+          b64
+            ? `<div style="flex:1;min-width:200px">
+                <p style="font-size:10px;color:#888;margin:0 0 6px;text-transform:uppercase;letter-spacing:.08em">${label}</p>
+                <img src="${b64}" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;border:1px solid #eee" />
+               </div>`
+            : `<p style="color:#aaa;font-size:12px;margin:0">${label}: Not available</p>`;
+
+        const docs    = formData.documents || {};
+        // ── FIX: document filename dark, only checkmark green ──
+        const docRows = Object.entries(docs)
+          .filter(([, d]) => d?.name)
+          .map(([id, d]) => `
+            <tr>
+              <td style="padding:7px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;text-transform:capitalize">
+                ${id.replace(/_/g, " ")}
+              </td>
+              <td style="padding:7px 12px;border-bottom:1px solid #f0f0f0;font-size:13px">
+                <span style="color:#10b981;font-weight:600">✓ </span>
+                <span style="color:#1a1a2e">${d.name}</span>
+              </td>
+            </tr>`).join("");
+
+        const sigHtml = signatureData
+          ? `<div style="width:260px;height:90px;border:1px solid #eee;border-radius:8px;background:#fff;
+                         display:flex;align-items:center;justify-content:center;overflow:hidden;
+                         padding:8px;box-sizing:border-box;">
+               <img src="${signatureData}" style="max-width:100%;max-height:100%;object-fit:contain;display:block;" />
+             </div>`
+          : `<p style="color:#aaa;font-size:13px;margin:0">Not available</p>`;
+
+        const wrap = document.createElement("div");
+        wrap.style.cssText = [
+          "position:absolute", "top:-99999px", "left:0",
+          "width:794px", "padding:56px 60px", "background:#fff",
+          "color:#1a1a2e",
+          "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
+          "font-size:14px", "line-height:1.6", "box-sizing:border-box", "z-index:-9999",
+        ].join(";");
+
+        wrap.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #7c3aed;padding-bottom:24px;margin-bottom:32px">
+            <div>
+              <div style="font-size:26px;font-weight:700;color:#7c3aed;margin-bottom:4px">Aether Capital</div>
+              <div style="color:#888;font-size:13px">Onboarding Application — Submission Receipt</div>
+            </div>
+            ${result.profileImageB64
+              ? `<img src="${result.profileImageB64}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid #7c3aed" />`
+              : ""}
+          </div>
+
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#888;margin-bottom:10px;font-weight:600">Submission Details</div>
+          <table style="width:100%;border-collapse:collapse;margin-bottom:28px;font-size:14px">
+            <tr><td style="color:#aaa;padding:4px 0;width:180px">Submission ID</td><td style="font-weight:600;color:#7c3aed">${result.submissionId || "—"}</td></tr>
+            <tr><td style="color:#aaa;padding:4px 0">Submitted At</td><td>${submittedAt}</td></tr>
+            <tr><td style="color:#aaa;padding:4px 0">Status</td><td style="color:#10b981;font-weight:500">✓ Received — Under Review</td></tr>
+          </table>
+
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#888;margin-bottom:10px;font-weight:600">Personal Details</div>
+          <table style="width:100%;border-collapse:collapse;margin-bottom:28px;font-size:14px">
+            <tr><td style="color:#aaa;padding:4px 0;width:180px">Name</td><td>${result.applicantName || "—"}</td></tr>
+            <tr><td style="color:#aaa;padding:4px 0">Account Type</td><td style="text-transform:capitalize">${formData.accountType || "—"}</td></tr>
+            <tr><td style="color:#aaa;padding:4px 0">Nationality</td><td>${formData.nationality || "—"}</td></tr>
+            <tr><td style="color:#aaa;padding:4px 0">Gender</td><td>${formData.gender || "—"}</td></tr>
+            <tr><td style="color:#aaa;padding:4px 0">Date of Birth</td><td>${formData.dobDay ? `${formData.dobDay} ${formData.dobMonth} ${formData.dobYear}` : "—"}</td></tr>
+          </table>
+
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#888;margin-bottom:10px;font-weight:600">Address</div>
+          <table style="width:100%;border-collapse:collapse;margin-bottom:28px;font-size:14px">
+            <tr><td style="color:#aaa;padding:4px 0;width:180px">Address</td><td>${formData.address1 || "—"}</td></tr>
+            <tr><td style="color:#aaa;padding:4px 0">City</td><td>${formData.city || "—"}</td></tr>
+            <tr><td style="color:#aaa;padding:4px 0">Country</td><td>${formData.country || "—"}</td></tr>
+            <tr><td style="color:#aaa;padding:4px 0">ZIP</td><td>${formData.zip || "—"}</td></tr>
+            <tr><td style="color:#aaa;padding:4px 0">Timezone</td><td>${formData.timezone || "—"}</td></tr>
+          </table>
+
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#888;margin-bottom:10px;font-weight:600">Compliance</div>
+          <table style="width:100%;border-collapse:collapse;margin-bottom:28px;font-size:14px">
+            <tr><td style="color:#aaa;padding:4px 0;width:180px">Risk Score</td><td>${riskScore}/100 (${riskTier})</td></tr>
+            <tr><td style="color:#aaa;padding:4px 0">2FA</td><td>${formData.twoFA ? `Enabled · ${formData.tfaMethod || ""}` : "Disabled"}</td></tr>
+          </table>
+
+          ${docRows ? `
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#888;margin-bottom:10px;font-weight:600">Documents Submitted</div>
+          <table style="width:100%;border-collapse:collapse;margin-bottom:28px">
+            <thead><tr style="background:#f8f8f8">
+              <th style="text-align:left;padding:7px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#888">Document</th>
+              <th style="text-align:left;padding:7px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#888">Status</th>
+            </tr></thead>
+            <tbody>${docRows}</tbody>
+          </table>` : ""}
+
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#888;margin-bottom:10px;font-weight:600">Identity Documents</div>
+          <div style="display:flex;gap:20px;margin-bottom:28px;flex-wrap:wrap">
+            ${imgBlock(result.idFrontB64, "ID — Front")}
+            ${imgBlock(result.idBackB64,  "ID — Back")}
+          </div>
+
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#888;margin-bottom:10px;font-weight:600">Signature</div>
+          <div style="margin-bottom:40px">${sigHtml}</div>
+
+          <div style="border-top:1px solid #eee;padding-top:20px;font-size:11px;color:#aaa">
+            This receipt confirms your application was received by Aether Capital.<br/>
+            Our team will review your application within 2 business days.
+          </div>`;
+
+        const pageChildren = Array.from(document.body.children);
+        pageChildren.forEach((el) => { el.style.visibility = "hidden"; });
+        document.body.appendChild(wrap);
+        wrap.style.visibility = "visible";
+
+        try {
+          const canvas = await html2canvas(wrap, {
+            scale: 2, useCORS: true, allowTaint: true,
+            backgroundColor: "#ffffff", width: 794,
+            height: wrap.scrollHeight, windowWidth: 794,
+            scrollX: 0, scrollY: 99999,
+          });
+
+          const imgData    = canvas.toDataURL("image/jpeg", 0.92);
+          const pdf        = new jsPDF({ unit: "px", format: "a4", orientation: "portrait" });
+          const pdfW       = pdf.internal.pageSize.getWidth();
+          const pdfH       = pdf.internal.pageSize.getHeight();
+          const ratio      = pdfW / canvas.width;
+          const totalH     = canvas.height * ratio;
+          const totalPages = Math.ceil(totalH / pdfH);
+
+          for (let i = 0; i < totalPages; i++) {
+            if (i > 0) pdf.addPage();
+            pdf.addImage(imgData, "JPEG", 0, -(i * pdfH), pdfW, totalH);
+          }
+
+          pdf.save(`aether-receipt-${result.submissionId || Date.now()}.pdf`);
+        } finally {
+          pageChildren.forEach((el) => { el.style.visibility = ""; });
+          document.body.removeChild(wrap);
+        }
+      },
+
+      reset: () => {
+        fileStore.clear();
+        sessionStorage.removeItem(SIG_KEY);
+        set({
+          step: 1, reachedStep: 1, formData: {},
+          isSubmitting: false, isSubmitted: false,
+          submitError: null, submissionResult: null,
+        });
+      },
+    }),
+    {
+      name: "aether-onboarding",
+      partialize: (state) => ({
+        step:        state.step,
+        reachedStep: state.reachedStep,
+        isSubmitted: state.isSubmitted,
+        // ── FIX: persist images so PDF works after refresh ──
+        submissionResult: state.submissionResult ? {
+          submissionId:    state.submissionResult.submissionId,
+          submittedAt:     state.submissionResult.submittedAt,
+          applicantName:   state.submissionResult.applicantName,
+          email:           state.submissionResult.email,
+          accountType:     state.submissionResult.accountType,
+          profileImageB64: state.submissionResult.profileImageB64 || null,
+          idFrontB64:      state.submissionResult.idFrontB64      || null,
+          idBackB64:       state.submissionResult.idBackB64       || null,
+          signatureData:   state.submissionResult.signatureData   || null,
+        } : null,
+        formData: Object.fromEntries(
+          Object.entries(state.formData).filter(([k]) => {
+            if (k === "signatureData") return false;
+            // ── FIX: keep image previews for badge + PDF fallback ──
+            if (["profileImage__preview", "idFront__preview", "idBack__preview"].includes(k)) return true;
+            if (k.endsWith("__preview")) return false;
+            return true;
+          })
+        ),
+      }),
     },
-
-    status: "pending",
-  })
+  ),
 );
-
-  if (req.files?.idFront?.[0]) {
-    const f = req.files.idFront[0];
-    driveUploads.idFront = await uploadFileToDrive(
-      f.buffer, f.originalname, f.mimetype, "identity-docs"
-    );
-  }
-
-  if (req.files?.idBack?.[0]) {
-    const f = req.files.idBack[0];
-    driveUploads.idBack = await uploadFileToDrive(
-      f.buffer, f.originalname, f.mimetype, "identity-docs"
-    );
-  }
-
-  // CRITICAL CLEANUP: Overwriting duplicate documents array block has been completely removed.
-
-  if (signatureData) {
-    driveUploads.signature = await uploadBase64ToDrive(
-      signatureData,
-      `sig_${Date.now()}.png`,
-      "image/png",
-      "signatures"
-    );
-  }
-
-  // ── Risk Score ────────────────────────────────────────────────────────────
-  const finalRiskScore = calculateRiskScore({
-    accountType,
-    country,
-    roles:            parsedRoles,
-    twoFactorEnabled: isTwoFAEnabled,
-    questionnaire:    rawQuestionnaire,
-  });
-
-  const finalRiskLevel =
-    finalRiskScore >= 70 ? "high"
-    : finalRiskScore >= 40 ? "medium"
-    : "low";
-
-  // ── Save to MongoDB ───────────────────────────────────────────────────────
-  const onboarding = await Onboarding.create({
-    accountType,
-    email,
-
-    // Individual
-    firstName, middleName, lastName,
-    dateOfBirth: dobDay && dobMonth && dobYear
-      ? new Date(`${dobYear}-${dobMonth}-${dobDay}`)
-      : undefined,
-    gender, nationality,
-
-    // Corporate
-    companyName, legalName, tradeName, regNumber, regDate,
-    industry, employeeRange,
-    subsidiaryCount: subsidiaryCount ? Number(subsidiaryCount) : undefined,
-    parentCompany, isListed, tickerSymbol,
-
-    // Address & Operations
-    address: {
-      street:     address1,
-      street2:    address2,
-      city, state,
-      postalCode: zip,
-      country,
-      timezone,
-    },
-    
-    // FIXED: Embedded parseSafe logic saving operatingHours cleanly
-    operatingHours: parseSafe(operatingHours, []),
-    
-    sameAsPrimary: sameAsPrimary === "true" || sameAsPrimary === true,
-    mailingAddress: !(sameAsPrimary === "true" || sameAsPrimary === true)
-      ? { street: mailAddress1, city: mailCity, state: mailState, postalCode: mailPostal }
-      : undefined,
-
-    // Roles & permissions
-    roles:            parsedRoles,
-    departments:      parsedDepartments,
-    permissions:      parsedPermissions,
-    twoFactorEnabled: isTwoFAEnabled,
-    twoFactorMethod:  tfaMethod,
-
-    // Compliance
-    questionnaire: rawQuestionnaire,
-    riskScore:     finalRiskScore,
-    riskLevel:     finalRiskLevel,
-
-    // Legal
-    termsAccepted:   agreedToTerms === "true" || agreedToTerms === true,
-    termsAcceptedAt: new Date(),
-    submittedAt:     new Date(),
-    status:          "submitted",
-
-    // Drive files
-    profileImage: driveUploads.profileImage,
-    idFront:      driveUploads.idFront,
-    idBack:       driveUploads.idBack,
-    documents:    driveUploads.documents || [],
-    signature: driveUploads.signature
-      ? { driveFile: driveUploads.signature, signedAt: new Date() }
-      : undefined,
-  });
-
-  return res.status(201).json(
-    new ApiResponse(201, { id: onboarding._id }, "Application submitted successfully! 🎉")
-  );
-});
-
-// ─── Get single onboarding ────────────────────────────────────────────────────
-export const getOnboarding = asyncHandler(async (req, res) => {
-  const doc = await Onboarding.findById(req.params.id);
-  if (!doc) throw new ApiError(404, "Onboarding record not found");
-  return res.status(200).json(new ApiResponse(200, doc));
-});
-
-// ─── Get all onboardings ──────────────────────────────────────────────────────
-export const getAllOnboardings = asyncHandler(async (req, res) => {
-  const docs = await Onboarding.find().sort({ createdAt: -1 });
-  return res.status(200).json(new ApiResponse(200, docs));
-});
