@@ -111,25 +111,34 @@ export const submitOnboarding = asyncHandler(async (req, res) => {
   const driveUploads = {};
 
   // FIXED: Single document block preserves labeled array structures cleanly
-  if (req.files?.documents?.length > 0) {
-    const labels = parseSafe(documentLabels, []);
+ // ── Compliance documents already uploaded from frontend ──────────────────
+const parsedDocuments =
+  typeof raw.documents === "string"
+    ? parseSafe(raw.documents, {})
+    : raw.documents || {};
 
-    driveUploads.documents = await Promise.all(
-      req.files.documents.map(async (f, index) => {
-        const uploaded = await uploadFileToDrive(
-          f.buffer,
-          f.originalname,
-          f.mimetype,
-          "compliance-docs"
-        );
+const DOC_LABELS = {
+  incorp_cert: "Certificate of Incorporation",
+  tax_id: "Tax Registration",
+  proof_addr: "Proof of Address",
+  ubo_registry: "Beneficial Owner Declaration",
+};
 
-        return {
-          type: labels[index] || "Document",
-          ...uploaded,
-        };
-      })
-    );
-  }
+driveUploads.documents = Object.entries(parsedDocuments).map(
+  ([key, value]) => ({
+    type: DOC_LABELS[key] || key,
+
+    file: {
+      fileId: value.fileId,
+      fileName: value.name,
+      directUrl: value.driveUrl,
+      webViewLink: value.driveViewLink,
+      mimeType: value.mimeType,
+    },
+
+    status: "pending",
+  })
+);
 
   if (req.files?.idFront?.[0]) {
     const f = req.files.idFront[0];
