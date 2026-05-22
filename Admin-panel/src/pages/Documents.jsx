@@ -40,22 +40,20 @@ export default function Documents() {
     fetchDocuments();
   }, []);
 
-  // ── Reactive Filtering Pipeline Logic ──────────────────────────────────────
+  // Get all unique document types for the filter dropdown
+  const allTypes = [...new Set(documents.map((doc) => doc.type).filter(Boolean))];
+
+  // Reactive Filtering
   const filteredDocuments = documents.filter((doc) => {
-    // Exact check mapping logic for match rules
     const matchesType =
       typeFilter === "all" ||
-      doc.type?.toLowerCase().replace(/\s+/g, "") ===
-        typeFilter.toLowerCase().replace(/\s+/g, "");
+      doc.type === typeFilter;
 
-    // Normalizing variants like 'submitted'/'pending' and 'verified'/'approved'
     const docStatus = doc.status?.toLowerCase();
     const normalizedDocStatus =
-      docStatus === "submitted"
-        ? "pending"
-        : docStatus === "approved"
-          ? "verified"
-          : docStatus;
+      docStatus === "submitted" ? "pending"
+      : docStatus === "approved" ? "verified"
+      : docStatus;
     const matchesStatus =
       statusFilter === "all" || normalizedDocStatus === statusFilter;
 
@@ -64,7 +62,7 @@ export default function Documents() {
 
   return (
     <Box sx={{ p: 1 }}>
-      {/* ── Sub Header Control Panel Section ── */}
+      {/* Header */}
       <Box
         sx={{
           display: "flex",
@@ -80,7 +78,7 @@ export default function Documents() {
         </Typography>
 
         <Box sx={{ display: "flex", gap: 1.5 }}>
-          {/* Document Type Dropdown Selection */}
+          {/* Document Type Filter */}
           <FormControl size="small">
             <Select
               value={typeFilter}
@@ -89,29 +87,23 @@ export default function Documents() {
                 borderRadius: 2.5,
                 fontSize: 12,
                 fontWeight: 600,
-                minWidth: 110,
+                minWidth: 130,
                 height: 36,
                 bgcolor: "#ffffff",
                 color: "#1e293b",
-                "& .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#e2e8f0",
-                },
+                "& .MuiOutlinedInput-notchedOutline": { borderColor: "#e2e8f0" },
               }}
             >
               <MenuItem value="all">All Types</MenuItem>
-              <MenuItem value="Government ID Front">
-                Government ID Front
-              </MenuItem>
-              <MenuItem value="Government ID Back">Government ID Back</MenuItem>
-              <MenuItem value="Certificate of Incorporation">
-                Certificate of Incorporation
-              </MenuItem>
-              <MenuItem value="Tax Registration">Tax Registration</MenuItem>
-              <MenuItem value="Proof of Address">Proof of Address</MenuItem>
+              {allTypes.map((type) => (
+                <MenuItem key={type} value={type}>
+                  {type}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
 
-          {/* Action Verification Status Dropdown Selection */}
+          {/* Status Filter */}
           <FormControl size="small">
             <Select
               value={statusFilter}
@@ -124,9 +116,7 @@ export default function Documents() {
                 height: 36,
                 bgcolor: "#ffffff",
                 color: "#1e293b",
-                "& .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#e2e8f0",
-                },
+                "& .MuiOutlinedInput-notchedOutline": { borderColor: "#e2e8f0" },
               }}
             >
               <MenuItem value="all">All Status</MenuItem>
@@ -138,31 +128,28 @@ export default function Documents() {
         </Box>
       </Box>
 
-      {/* ── Filtered Layout Grid ── */}
+      {/* Document Grid — ONE card per document, no nested map */}
       <Grid container spacing={3}>
         {filteredDocuments.length > 0 ? (
-          filteredDocuments.map((doc, index) => (
+          filteredDocuments.map((doc, idx) => (
             <Grid
               item
               xs={12}
               sm={6}
               md={4}
               lg={3}
-              key={doc.file?.fileId || doc._id || index}
+              key={`${doc.submissionId}-${doc.documentType}-${idx}`}
             >
-              {documents.map((doc, idx) => (
-  <DocumentCard
-    key={idx}
-    submissionId={doc.submissionId}
-    title={doc.type}            // Maps to title inside DocumentCard
-    documentType={doc.type}     // Passed exactly to handleUpdate -> backend translation
-    user={doc.applicant}
-    status={doc.status}         // Now reads the real, isolated verification status!
-    file={doc.file}
-    setToast={setToast}
-    refreshDocuments={fetchDocuments}
-  />
-))}
+              <DocumentCard
+                submissionId={doc.submissionId}
+                title={doc.type}
+                documentType={doc.documentType}
+                user={doc.applicant}
+                status={doc.status}
+                file={doc.file}
+                setToast={setToast}
+                refreshDocuments={fetchDocuments}
+              />
             </Grid>
           ))
         ) : (
@@ -176,17 +163,15 @@ export default function Documents() {
                 bgcolor: "#f8fafc",
               }}
             >
-              <Typography
-                sx={{ fontSize: 13, fontWeight: 600, color: "#64748b" }}
-              >
-                No records matching active dashboard criteria.
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: "#64748b" }}>
+                No documents matching the selected filters.
               </Typography>
             </Box>
           </Grid>
         )}
       </Grid>
 
-      {/* Action Toast Feedback alerts */}
+      {/* Toast */}
       <Snackbar
         open={toast.open}
         autoHideDuration={3000}
