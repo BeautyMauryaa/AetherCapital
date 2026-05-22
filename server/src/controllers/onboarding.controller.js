@@ -10,25 +10,21 @@ export const calculateRiskScore = ({
   country,
   roles,
   twoFactorEnabled,
-  questionnaire,   // object like { regulated: true, pii: false, ... }
+  questionnaire,
 }) => {
   let score = 0;
 
-  // Account type weight
   if (accountType === "enterprise") score += 15;
   else if (accountType === "business") score += 10;
   else score += 5;
 
-  // Sensitive roles
   if (Array.isArray(roles)) {
     if (roles.includes("Admin")) score += 10;
     if (roles.includes("Billing")) score += 5;
   }
 
-  // No 2FA is risky
   if (!twoFactorEnabled) score += 10;
 
-  // Questionnaire
   if (questionnaire.regulated) score += 10;
   if (questionnaire.pii) score += 8;
   if (questionnaire.payments) score += 10;
@@ -39,7 +35,6 @@ export const calculateRiskScore = ({
   if (questionnaire.pep_services) score += 12;
   if (questionnaire.cross_border_storage) score += 8;
 
-  // High-risk countries
   if (["AF", "IR", "KP"].includes(country)) score += 25;
 
   return Math.min(score, 100);
@@ -64,36 +59,25 @@ const parseSafe = (val, fallback = null) => {
 export const submitOnboarding = asyncHandler(async (req, res) => {
 
   const raw = req.body.formData ? JSON.parse(req.body.formData) : req.body;
-  const {
-    operatingHours,
-    documentLabels,
-  } = raw;
-  
+  const { operatingHours, documentLabels } = raw;
+
   const {
     accountType,
     firstName, middleName, lastName,
     dobDay, dobMonth, dobYear,
     gender, nationality,
-    // Address — frontend sends flat keys
     country, address1, address2, city, state, zip, timezone,
     sameAsPrimary, mailAddress1, mailCity, mailState, mailPostal,
-    // Step 4
     roles, departments, permissions, twoFA, tfaMethod,
-    // Step 5 — frontend stores questionnaire answers under "answers" key
     answers, questionnaire,
-    // Step 6
     signatureData, agreedToTerms,
-    // Corporate fields
     companyName, legalName, tradeName, regNumber, regDate,
     industry, employeeRange, subsidiaryCount, parentCompany,
     isListed, tickerSymbol,
-    // email (if captured)
     email,
   } = raw;
 
-  // ── Normalise questionnaire ────────────────────────────────────────────────
-  // Frontend Step5 stores answers as formData.answers  (individual flow)
-  // or formData.questionnaire (corporate flow)
+  // ── Normalise questionnaire ───────────────────────────────────────────────
   const rawQuestionnaire = (() => {
     const a = parseSafe(answers,       null);
     const q = parseSafe(questionnaire, null);
@@ -110,36 +94,57 @@ export const submitOnboarding = asyncHandler(async (req, res) => {
   // ── Upload files to Drive ─────────────────────────────────────────────────
   const driveUploads = {};
 
-  // FIXED: Single document block preserves labeled array structures cleanly
- // ── Compliance documents already uploaded from frontend ──────────────────
-const parsedDocuments =
-  typeof raw.documents === "string"
-    ? parseSafe(raw.documents, {})
-    : raw.documents || {};
+  const DOC_LABELS = {
+    incorp_cert:  "Certificate of Incorporation",
+    tax_id:       "Tax Registration",
+    proof_addr:   "Proof of Address",
+    ubo_registry: "Beneficial Owner Declaration",
+  };
 
-const DOC_LABELS = {
-  incorp_cert: "Certificate of Incorporation",
-  tax_id: "Tax Registration",
-  proof_addr: "Proof of Address",
-  ubo_registry: "Beneficial Owner Declaration",
-};
+  // ── Parse documents — handle both array (new) and map (legacy) shapes ─────
+  const rawDocs = parseSafe(raw.documents, null);
 
-driveUploads.documents = Object.entries(parsedDocuments).map(
-  ([key, value]) => ({
-    type: DOC_LABELS[key] || key,
+  console.log("📥 rawDocs:", JSON.stringify(rawDocs, null, 2));
+  console.log("📥 IS ARRAY:", Array.isArray(rawDocs));
 
-    file: {
-      fileId: value.fileId,
-      fileName: value.name,
-      directUrl: value.driveUrl,
-      webViewLink: value.driveViewLink,
-      mimeType: value.mimeType,
-    },
+  if (Array.isArray(rawDocs)) {
+    // Frontend already sent a transformed array — use directly
+    driveUploads.documents = Object.entries(parsedDocuments).map(([key, value]) => ({
+  documentType: DOC_LABELS[key] || key,  // was: type
+  file: {
+    fileId:      value.fileId,
+    fileName:    value.name,
+    directUrl:   value.driveUrl,
+    webViewLink: value.driveViewLink,
+    mimeType:    value.mimeType,
+  },
+  status: "pending",
+}));
+  } else if (rawDocs && typeof rawDocs === "object") {
+    // Legacy map shape { incorp_cert: {...}, tax_id: {...} }
+    driveUploads.documents = Object.entries(rawDocs)
+      .map(([key, value]) => {
+        if (!value || typeof value !== "object") return null;
+        return {
+          type: DOC_LABELS[key] || key,
+          file: {
+            fileId:      value.fileId        || null,
+            fileName:    value.name          || null,
+            directUrl:   value.driveUrl      || null,
+            webViewLink: value.driveViewLink || null,
+            mimeType:    value.mimeType      || null,
+          },
+          status: "pending",
+        };
+      })
+      .filter(Boolean);
+  } else {
+    driveUploads.documents = [];
+  }
 
-    status: "pending",
-  })
-);
+  console.log("✅ driveUploads.documents:", JSON.stringify(driveUploads.documents, null, 2));
 
+  // ── Identity docs ─────────────────────────────────────────────────────────
   if (req.files?.idFront?.[0]) {
     const f = req.files.idFront[0];
     driveUploads.idFront = await uploadFileToDrive(
@@ -153,8 +158,6 @@ driveUploads.documents = Object.entries(parsedDocuments).map(
       f.buffer, f.originalname, f.mimetype, "identity-docs"
     );
   }
-
-  // CRITICAL CLEANUP: Overwriting duplicate documents array block has been completely removed.
 
   if (signatureData) {
     driveUploads.signature = await uploadBase64ToDrive(
@@ -179,25 +182,37 @@ driveUploads.documents = Object.entries(parsedDocuments).map(
     : finalRiskScore >= 40 ? "medium"
     : "low";
 
+
+    console.log(
+  "FINAL DOCUMENTS TYPE:",
+  typeof driveUploads.documents
+);
+
+console.log(
+  "IS ARRAY:",
+  Array.isArray(driveUploads.documents)
+);
+
+console.log(
+  "FINAL DOCUMENTS:",
+  JSON.stringify(driveUploads.documents, null, 2)
+);
   // ── Save to MongoDB ───────────────────────────────────────────────────────
   const onboarding = await Onboarding.create({
     accountType,
     email,
 
-    // Individual
     firstName, middleName, lastName,
     dateOfBirth: dobDay && dobMonth && dobYear
       ? new Date(`${dobYear}-${dobMonth}-${dobDay}`)
       : undefined,
     gender, nationality,
 
-    // Corporate
     companyName, legalName, tradeName, regNumber, regDate,
     industry, employeeRange,
     subsidiaryCount: subsidiaryCount ? Number(subsidiaryCount) : undefined,
     parentCompany, isListed, tickerSymbol,
 
-    // Address & Operations
     address: {
       street:     address1,
       street2:    address2,
@@ -206,45 +221,33 @@ driveUploads.documents = Object.entries(parsedDocuments).map(
       country,
       timezone,
     },
-    
-    // FIXED: Embedded parseSafe logic saving operatingHours cleanly
+
     operatingHours: parseSafe(operatingHours, []),
-    
+
     sameAsPrimary: sameAsPrimary === "true" || sameAsPrimary === true,
     mailingAddress: !(sameAsPrimary === "true" || sameAsPrimary === true)
       ? { street: mailAddress1, city: mailCity, state: mailState, postalCode: mailPostal }
       : undefined,
 
-    // Roles & permissions
     roles:            parsedRoles,
     departments:      parsedDepartments,
     permissions:      parsedPermissions,
     twoFactorEnabled: isTwoFAEnabled,
     twoFactorMethod:  tfaMethod,
 
-    // Compliance
     questionnaire: rawQuestionnaire,
     riskScore:     finalRiskScore,
     riskLevel:     finalRiskLevel,
 
-    // Legal
     termsAccepted:   agreedToTerms === "true" || agreedToTerms === true,
     termsAcceptedAt: new Date(),
     submittedAt:     new Date(),
     status:          "submitted",
 
-    // Drive files
     profileImage: driveUploads.profileImage,
-   idFront: {
-  file: driveUploads.idFront,
-  status: "pending",
-},
-
-idBack: {
-  file: driveUploads.idBack,
-  status: "pending",
-},
-    documents:    driveUploads.documents || [],
+    idFront: { file: driveUploads.idFront, status: "pending" },
+    idBack:  { file: driveUploads.idBack,  status: "pending" },
+    documents: driveUploads.documents || [],
     signature: driveUploads.signature
       ? { driveFile: driveUploads.signature, signedAt: new Date() }
       : undefined,
