@@ -45,7 +45,12 @@ const questions = [
 
 const Questionnaire = () => {
   const { formData, updateForm } = useOnboardingStore();
-  const answers = formData.answers || {};
+ const answers =
+  formData.answers &&
+  typeof formData.answers === "object" &&
+  !Array.isArray(formData.answers)
+    ? formData.answers
+    : {};
 
   const setAnswer = (id, value) => {
     updateForm({
