@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useOnboardingStore } from "@/app/store/onboarding.store";
 import { CheckCircle2, Upload, Loader2, AlertCircle, X } from "lucide-react";
+import { useShallow } from 'zustand/react/shallow';
 import { useTheme } from "@/context/ThemeContext";
 import { uploadDocument } from "@/services/api.service";
 
@@ -16,8 +17,8 @@ const DocumentChecklist = () => {
 
   // ✅ FIXED
   const documents = useOnboardingStore(
-    (s) => s.formData.documents || {}
-  );
+  useShallow((s) => s.formData.documents || {})
+);
 
   const { theme } = useTheme();
   const isDark = theme === "dark";
