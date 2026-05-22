@@ -13,9 +13,9 @@ import {
   Box,
 } from "@mui/material";
 
-import { useEffect, useState } from "react"; // ✅ FIXED: Added missing useState hook
+import { useEffect, useState } from "react"; 
 import { useAdminStore } from "../../store/adminStore";
-import SubmissionDrawer from "../drawers/SubmissionDrawer";
+import SubmissionDrawer from "../common/SubmissionDrawer";
 
 export default function RecentSubmissions() {
   const { submissions = [], fetchSubmissions } = useAdminStore();
@@ -155,7 +155,7 @@ export default function RecentSubmissions() {
                           : sub.status === "rejected"
                             ? "error"
                             : sub.status === "under_review" || sub.status === "submitted"
-                              ? "warning" // ✅ FIXED: Captures both pending review states gracefully
+                              ? "warning" 
                               : "info"
                       }
                       sx={{
@@ -185,8 +185,6 @@ export default function RecentSubmissions() {
           </TableBody>
         </Table>
       </TableContainer>
-
-      {/* ✅ ADDED: Submission Drawer Mounting Interceptor Component */}
       <SubmissionDrawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
