@@ -13,12 +13,14 @@ const DOCS = [
 
 const DocumentChecklist = () => {
   const updateForm = useOnboardingStore((s) => s.updateForm);
-  const documentsJson = useOnboardingStore((s) =>
-  JSON.stringify(s.formData.documents ?? {})
-);
-const documents = JSON.parse(documentsJson);
+
+  // ✅ FIXED
+  const documents = useOnboardingStore(
+    (s) => s.formData.documents || {}
+  );
+
   const { theme } = useTheme();
-  const isDark    = theme === "dark";
+  const isDark = theme === "dark";
 
   const [uploadState, setUploadState] = useState({});
   const [uploadError, setUploadError] = useState({});
