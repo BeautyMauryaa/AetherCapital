@@ -6,7 +6,12 @@ const RiskScore = () => {
   const { formData } = useOnboardingStore();
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const answers = formData.answers || {};
+const answers =
+  formData.answers &&
+  typeof formData.answers === "object" &&
+  !Array.isArray(formData.answers)
+    ? formData.answers
+    : {};
   const score = Object.values(answers).filter((v) => v === true).length * 12.5;
 
   const getRiskLabel = (s) => {
