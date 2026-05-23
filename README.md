@@ -224,9 +224,3 @@ Risk score is computed dynamically based on:
 
 **Nova (Beauty)**
 Full Stack Developer focused on building scalable, AI-driven, and compliance-oriented web platforms.
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License.
