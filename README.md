@@ -212,19 +212,6 @@ Risk score is computed dynamically based on:
 ![Analytics](./screenshots/analytics.png)
 ```
 
----
-
-## 📌 Future Improvements
-
-- Role-based admin access control
-- Email notifications for status updates
-- Full audit logs
-- AI-assisted compliance review
-- Real-time activity tracking
-- Advanced analytics & reporting
-
----
-
 ## 🚀 Deployment
 
 - **Frontend & Backend** → Render
