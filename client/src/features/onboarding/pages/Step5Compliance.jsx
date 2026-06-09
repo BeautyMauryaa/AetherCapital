@@ -1,87 +1,57 @@
-import React, { useState, useEffect } from 'react';
 import { useOnboardingStore } from "@/app/store/onboarding.store";
 import NavigationButtons from "../components/common/NavigationButtons";
-import RiskScore from "../components/risk/RiskScore";
 import Questionnaire from "../components/questionnaire/Questionnaire";
-import DocumentChecklist from "../components/documents/DocumentChecklist";
+import RiskScore from "../components/risk/RiskScore";
+import { useTheme } from "@/context/ThemeContext";
 
-function useIsDark() {
-  const [isDark, setIsDark] = useState(
-    () => typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
-  );
-  useEffect(() => {
-    const el = document.documentElement;
-    const observer = new MutationObserver(() => {
-      setIsDark(el.classList.contains('dark'));
-    });
-    observer.observe(el, { attributes: true, attributeFilter: ['class'] });
-    return () => observer.disconnect();
-  }, []);
-  return isDark;
-}
+const Step5Compliance = () => {
+  const { nextStep } = useOnboardingStore();
+  const { theme } = useTheme();
 
-const Step5CorpCompliance = () => {
-  const { formData, nextStep, prevStep } = useOnboardingStore();
-  const isDark = useIsDark();
-const handleContinue = () => {
-  const requiredDocs = ['incorp_cert', 'tax_id', 'proof_addr', 'ubo_registry'];
-
-  const missing = requiredDocs.filter((id) => {
-    // File object still in formData (same session)
-    const entry = formData.documents?.[id];
-    if (entry instanceof File) return false; // ✅ present
-
-    // Persisted metadata name written by store
-    const persistedName = formData.documents__names?.[id];
-    if (persistedName) return false; // ✅ present
-
-    return true; // ❌ missing
-  });
-
-  if (missing.length > 0) {
-    alert(`Please upload all required documents before continuing.\nMissing: ${missing.length} document(s).`);
-    return;
-  }
-
-  nextStep();
-};
+  const isDark = theme === "dark";
 
   return (
-    <div className="max-w-3xl pb-20 transition-colors duration-300">
-
+    <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 lg:px-2 pt-6 sm:pt-10 pb-24 sm:pb-28">
       {/* Header */}
-      <div className="mb-10">
-        <p className="flex items-center gap-2 font-mono text-[10px] tracking-[0.2em] text-purple-600 dark:text-purple-400 uppercase mb-3 before:content-[''] before:w-6 before:h-[1px] before:bg-purple-600 dark:before:bg-purple-400">
-          STEP 05 / 06
-        </p>
-        <h1 className="text-3xl font-semibold text-slate-900 dark:text-white mb-3">
-          Compliance &amp; <span className="text-purple-600 dark:text-purple-400">risk</span>.
+      <div className="mb-8 sm:mb-10">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-6 sm:w-8 h-[1.5px] bg-purple-500 rounded-full" />
+
+          <span className="font-mono text-[10px] sm:text-[11px] tracking-[0.2em] text-purple-500 uppercase font-bold">
+            Step 05 / 06
+          </span>
+        </div>
+
+        <h1
+          className={`text-[28px] sm:text-[36px] lg:text-[42px] font-bold leading-tight tracking-tight mb-2 sm:mb-3 ${
+            isDark ? "text-white" : "text-slate-900"
+          }`}
+        >
+          Compliance &{" "}
+          <span className="bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent">
+            risk.
+          </span>
         </h1>
-        <p className="text-[14px] text-slate-500 dark:text-slate-400">
-          Upload entity documents and complete the regulatory assessment.
+
+        <p
+          className={`text-[13px] sm:text-[15px] ${
+            isDark ? "text-white/50" : "text-slate-500"
+          }`}
+        >
+          Help us assess your regulatory exposure with a few yes/no questions.
         </p>
       </div>
 
-      {/* Risk Score + Questionnaire */}
-      <div className="space-y-10 mb-12">
+      {/* Content */}
+      <div className="space-y-8 sm:space-y-10">
         <RiskScore />
         <Questionnaire />
       </div>
 
-      {/* Document Checklist */}
-      <div className="mb-5 border-t border-slate-200 dark:border-white/5 pt-10">
-        <p className="text-[11px] font-bold tracking-[0.25em] text-slate-400 dark:text-slate-500 uppercase mb-6">
-          Document Checklist
-        </p>
-        <DocumentChecklist />
-      </div>
-
       {/* Navigation */}
-      <div className="mt-16 pt-8 border-t border-slate-200 dark:border-white/5">
-        <NavigationButtons onNext={handleContinue} onBack={prevStep} />
-      </div>
+      <NavigationButtons onNext={nextStep} />
     </div>
   );
 };
 
-export default Step5CorpCompliance;
+export default Step5Compliance;

@@ -11,7 +11,13 @@ const LEVELS      = ["NONE", "READ", "WRITE", "ADMIN"];
 const TFA_METHODS = ["SMS", "Authenticator App", "Hardware Key"];
 
 const Step4Roles = () => {
-  const { nextStep, updateForm, formData } = useOnboardingStore();
+//   const { nextStep, updateForm, formData } = useOnboardingStore();
+const {
+  nextStep,
+  updateForm,
+  formData,
+  currentStep,
+} = useOnboardingStore();
   const { theme } = useTheme();
   const isDark = theme === "dark";
 

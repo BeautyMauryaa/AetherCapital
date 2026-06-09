@@ -21,13 +21,49 @@ const Signature = () => {
   }, []);
 
   const autoSubmit = () => {
-    if (!sigCanvas.current || isCaptured) return;
-    const trimmed = sigCanvas.current.getTrimmedCanvas();
-    if (trimmed.width < 50 || trimmed.height < 20) return;
-    const dataURL = trimmed.toDataURL('image/png');
-    updateForm({ signatureData: dataURL });
-    setIsCaptured(true);
-  };
+  if (!sigCanvas.current || isCaptured) return;
+  const trimmed = sigCanvas.current.getTrimmedCanvas();
+  if (trimmed.width < 50 || trimmed.height < 20) return;
+
+  // Re-draw with dark ink on white background
+  const flat = document.createElement("canvas");
+  flat.width  = trimmed.width;
+  flat.height = trimmed.height;
+  const ctx   = flat.getContext("2d");
+
+  // White background
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, flat.width, flat.height);
+
+  // Draw original strokes in dark color using multiply blend
+  ctx.globalCompositeOperation = "multiply";
+  ctx.drawImage(trimmed, 0, 0);
+
+  // Force all non-white pixels to dark
+  const imageData = ctx.getImageData(0, 0, flat.width, flat.height);
+  const d = imageData.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const r = d[i], g = d[i+1], b = d[i+2], a = d[i+3];
+    if (a > 30 && !(r > 240 && g > 240 && b > 240)) {
+      // Non-white pixel — force to near-black
+      d[i]   = 30;
+      d[i+1] = 30;
+      d[i+2] = 30;
+      d[i+3] = 255;
+    } else {
+      // White/transparent — force to white
+      d[i]   = 255;
+      d[i+1] = 255;
+      d[i+2] = 255;
+      d[i+3] = 255;
+    }
+  }
+  ctx.putImageData(imageData, 0, 0);
+
+  const dataURL = flat.toDataURL("image/png");
+  updateForm({ signatureData: dataURL });
+  setIsCaptured(true);
+};
 
   const checkIfTouchingEdge = () => {
     try {
@@ -75,8 +111,8 @@ const Signature = () => {
     updateForm({ signatureData: null });
   };
 
-  const penColor = isCaptured ? "#10b981" : (isDark ? "#ffffff" : "#1f2937");
-
+  //const penColor = isCaptured ? "#10b981" : (isDark ? "#ffffff" : "#1f2937");
+const penColor = "#1f2937";
   return (
     <div className="mt-8">
       <div className="flex justify-between items-center mb-4">
