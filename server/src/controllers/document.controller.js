@@ -3,7 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
-// ─── GET /api/admin/documents ─────────────────────────────────────────────────
+
 export const getAllDocuments = asyncHandler(async (req, res) => {
   const submissions = await Onboarding.find().lean();
   const docs = [];
@@ -125,8 +125,7 @@ export const updateDocumentStatus = asyncHandler(async (req, res) => {
     submission.idBack.status = status;
     submission.markModified("idBack");
   } else if (documentType === "profileImage") {
-    // profileImage is a plain DriveFileSchema — no status field in schema
-    // Nothing to update status-wise; just acknowledge
+    
   } else {
     throw new ApiError(400, `Unknown documentType: ${documentType}`);
   }

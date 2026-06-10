@@ -3,9 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
-// ─── Upload single image (profile photo, logo) ────────────────────────────────
-// POST /api/upload/image
-// Form field: "image"
+
 export const uploadImage = asyncHandler(async (req, res) => {
   if (!req.file) {
     throw new ApiError(400, "No image file provided");
