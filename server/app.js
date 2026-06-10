@@ -5,7 +5,10 @@ import "dotenv/config";
 import onboardingRoutes from "./src/routes/onboarding.routes.js";
 import uploadRoutes from "./src/routes/upload.routes.js";
 import formRoutes from "./src/routes/form.routes.js";
+import adminRoutes from "./src/routes/admin.routes.js";
+
 import { errorMiddleware } from "./src/middleware/error.middleware.js";
+
 import {
   getAuthUrl,
   getTokensFromCode,
@@ -13,70 +16,133 @@ import {
 
 const app = express();
 
-// ─── CORS ─────────────────────────────────────────────────────────────────────
+
+// ─── CORS ─────────────────────────────────────
+
 app.use(
   cors({
     origin: [
-      process.env.FRONTEND_URL || "https://aethercapital3.onrender.com",
       "http://localhost:5173",
-      "http://localhost:3000",
+      "http://localhost:5174",
+      "https://aether-admin-panel.onrender.com",
+        "https://aether-admin-panel.onrender.com/submissions",
+      "https://aether-admin-panel.onrender.com/UnderReview",
+      "https://aether-admin-panel.onrender.com/approved",
+      "https://aether-admin-panel.onrender.com/rejected",
+      "https://aether-admin-panel.onrender.com/documents",
+      "https://aether-admin-panel.onrender.com/settings",
+        "https://aethercapital3.onrender.com",
     ],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+    ],
+
     credentials: true,
-  }),
+  })
 );
 
+
+// ─── Body Parser ─────────────────────────────
+
 app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// ─── Health Check ─────────────────────────────────────────────────────────────
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: "10mb",
+  })
+);
+
+
+// ─── Health Route ────────────────────────────
+
 app.get("/health", (req, res) => {
-  res.status(200).json({ status: "OK", timestamp: new Date().toISOString() });
+
+  res.status(200).json({
+    status: "OK",
+    timestamp: new Date().toISOString(),
+  });
+
 });
 
-// ─── Google OAuth2 — run once to get refresh token ───────────────────────────
-// Step 1: Open http://localhost:5000/api/auth/google in browser
+
+// ─── Google OAuth ────────────────────────────
+
 app.get("/api/auth/google", (req, res) => {
+
   const url = getAuthUrl();
+
   res.redirect(url);
+
 });
 
-// Step 2: Google redirects here → shows refresh token on screen
+
 app.get("/api/auth/google/callback", async (req, res) => {
+
   try {
+
     const { code } = req.query;
-    const tokens = await getTokensFromCode(code);
-    console.log("✅ REFRESH TOKEN:", tokens.refresh_token);
+
+    const tokens =
+    await getTokensFromCode(code);
+
+    console.log(
+      "✅ REFRESH TOKEN:",
+      tokens.refresh_token
+    );
+
     res.send(`
       <h2>✅ Auth successful!</h2>
-      <p>Copy this into your <code>.env</code> as <code>GOOGLE_REFRESH_TOKEN</code>:</p>
-      <pre style="background:#1a1a2e;color:#a78bfa;padding:16px;border-radius:8px;font-size:14px">
+
+      <p>
+        Copy this into your .env
+      </p>
+
+      <pre>
 ${tokens.refresh_token}
       </pre>
-      <p>Then restart the server — you won't need this page again.</p>
     `);
+
   } catch (err) {
-    res.status(500).send("Auth failed: " + err.message);
+
+    res.status(500).send(
+      "Auth failed: " + err.message
+    );
+
   }
+
 });
 
-// ─── API Routes ───────────────────────────────────────────────────────────────
+
+// ─── API Routes ──────────────────────────────
+
 app.use("/api/onboarding", onboardingRoutes);
+
 app.use("/api/upload", uploadRoutes);
+
 app.use("/api/form", formRoutes);
 
-// ─── 404 ─────────────────────────────────────────────────────────────────────
+app.use("/api/admin", adminRoutes);
+
+
+// ─── 404 ─────────────────────────────────────
+
 app.use((req, res) => {
-  res
-    .status(404)
-    .json({
-      success: false,
-      message: `Route not found: ${req.method} ${req.url}`,
-    });
+
+  res.status(404).json({
+    success: false,
+    message: `Route not found: ${req.method} ${req.url}`,
+  });
+
 });
 
-// ─── Global Error Handler ─────────────────────────────────────────────────────
+
+// ─── Error Middleware ────────────────────────
+
 app.use(errorMiddleware);
 
 export default app;

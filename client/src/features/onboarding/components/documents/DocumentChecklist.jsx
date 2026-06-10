@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useOnboardingStore } from "@/app/store/onboarding.store";
 import { CheckCircle2, Upload, Loader2, AlertCircle, X } from "lucide-react";
+import { useShallow } from 'zustand/react/shallow';
 import { useTheme } from "@/context/ThemeContext";
 import { uploadDocument } from "@/services/api.service";
 
@@ -13,12 +14,14 @@ const DOCS = [
 
 const DocumentChecklist = () => {
   const updateForm = useOnboardingStore((s) => s.updateForm);
-  const documentsJson = useOnboardingStore((s) =>
-  JSON.stringify(s.formData.documents ?? {})
+
+  // ✅ FIXED
+  const documents = useOnboardingStore(
+  useShallow((s) => s.formData.documents || {})
 );
-const documents = JSON.parse(documentsJson);
+
   const { theme } = useTheme();
-  const isDark    = theme === "dark";
+  const isDark = theme === "dark";
 
   const [uploadState, setUploadState] = useState({});
   const [uploadError, setUploadError] = useState({});
